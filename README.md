@@ -75,7 +75,22 @@ Dentro de um canal de MVPs, há duas formas de rastrear:
 
 Quando a janela de respawn de um MVP abrir (início do tempo mínimo de respawn), o bot posta um aviso no canal de track e mostra até que horário a janela fica aberta — o aviso **fica no canal até a última janela fechar** (não é apagado pela limpeza automática). Por padrão o aviso **não pinga ninguém**; com `!setpingrole @role` o bot passa a pingar a role escolhida (nunca `@here`/`@everyone`) a cada janela nova que abrir.
 
-Comandos de configuração (`!timezone`, `!setmvpchannel`/`!unsetmvpchannel`, `!setpingrole`/`!unsetpingrole`, `!clean`) exigem a permissão **Gerenciar Servidor**.
+## Permissões do bot
+
+Ao convidar o bot ([Developer Portal → OAuth2 → URL Generator](https://discord.com/developers/applications)), em **Bot Permissions** marque:
+
+- **View Channels** (ver canais)
+- **Send Messages** (enviar mensagens)
+- **Embed Links** (a tabela e os avisos são embeds)
+- **Manage Messages** (apaga mensagens sem prefixo e o aviso de janela fechada)
+- **Read Message History** (reconstrói a tabela/ajuda do canal ao reiniciar)
+- **Add Reactions** (botão ➕ TRACK MVP)
+
+E no portal, aba **Bot**, ative a *privileged intent* **Message Content Intents** (o `!track` lê o texto da mensagem).
+
+Em cada canal de track, o bot valida essas permissões no ambiente e avisa na tela com um detalhamento quando faltam (`validate_channel`).
+
+Comandos de configuração (`!timezone`, `!setmvpchannel`/`!unsetmvpchannel`, `!setpingrole`/`!unsetpingrole`, `!clean`) exigem a permissão **Gerenciar Servidor** (do *usuário* que digita o comando).
 
 Os comandos são **mensagens com prefixo** (padrão `!`, configurável em `COMMAND_PREFIX`) — em vez de slash commands — para não aparecer misturados aos comandos de outros bots na lista `/`. A tabela exibe o **código kRO do mapa** (navi, ex.: `gon_dun03`) em vez do nome em português. Só mensagens que começam com o prefixo são processadas; as demais são apagadas automaticamente pela rotina de limpeza do canal (requer permissão **Manage Messages**).
 

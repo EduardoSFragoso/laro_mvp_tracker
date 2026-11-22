@@ -75,7 +75,22 @@ Inside an MVP channel, there are two ways to track a MVP:
 
 When an MVP's respawn window opens (start of the min respawn time), the bot posts an announcement in the track channel, including until what time the window stays open — the announcement **stays in the channel until the last window closes** (it is not removed by the automatic cleaning). By default the announcement **pings nobody**; with `!setpingrole @role` the bot pings the chosen role (never `@here`/`@everyone`) each time a new window opens.
 
-Setup commands (`!timezone`, `!setmvpchannel`/`!unsetmvpchannel`, `!setpingrole`/`!unsetpingrole`, `!clean`) require the **Manage Server** permission.
+## Bot permissions
+
+When inviting the bot ([Developer Portal → OAuth2 → URL Generator](https://discord.com/developers/applications)), under **Bot Permissions** check:
+
+- **View Channels**
+- **Send Messages**
+- **Embed Links** (the table and announcements are embeds)
+- **Manage Messages** (deletes non-prefix messages and the closed-window announcement)
+- **Read Message History** (rebuilds the table/help on restart)
+- **Add Reactions** (➕ TRACK MVP button)
+
+And in the **Bot** tab of the portal, enable the **Message Content Intents** *privileged intent* (`!track` reads message text).
+
+On each track channel, the bot validates these permissions at runtime and posts a breakdown when any are missing (`validate_channel`).
+
+Setup commands (`!timezone`, `!setmvpchannel`/`!unsetmvpchannel`, `!setpingrole`/`!unsetpingrole`, `!clean`) require the **Manage Server** permission (of the *user* typing the command).
 
 Commands are **prefix-based messages** (default `!`, configurable in `COMMAND_PREFIX`) — instead of slash commands — so they do not mix with the slash commands of other bots on the `/` list. The table shows the **kRO map code** (navi, e.g. `gon_dun03`) instead of the Portuguese map name. Only messages starting with the prefix are processed; anything else is deleted automatically by the channel cleaning routine (requires the **Manage Messages** permission).
 
