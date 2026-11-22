@@ -4,6 +4,7 @@ import logging
 import os
 
 import asyncpg
+import discord
 
 from yellowtracker.domain.bot import Bot
 from yellowtracker.domain.models import ChannelState, GuildState, Mvp
@@ -31,6 +32,11 @@ async def on_ready(bot: Bot) -> None:
         await bot.pool_release(conn)
 
     bot.tracker_ready = True
+
+    # Descoberta dos comandos: como não há mais slash commands (que o Discord
+    # listava na barra "/"), o status deixa o prefixo visível na lista de membros.
+    prefix = bot.settings.command_prefix
+    await bot.change_presence(activity=discord.Game(name=f'{prefix} para ver os comandos do MVP Tracker'))
 
 
 async def load_database(bot: Bot, conn) -> None:
