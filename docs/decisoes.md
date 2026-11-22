@@ -25,13 +25,14 @@ a thumbnail (ratemyserver) é simplesmente pulada nesses casos.
 | Recurso | Decisão | Motivo |
 |---|---|---|
 | `/woe` | Mantido, com o calendário oficial acima | Existe no LATAM |
-| `/gmc` e `/hh` | Mantidos, mas respondem com "—" (placeholder) | **Não existem no LATAM** |
+| `/custom` e `/mobile` | **Comentados em `app.py`** (código dos módulos mantido, comando fora da sincronização) | Não têm uso no LATAM (sem tempos custom cadastrados; layout mobile herdado do server original) |
 | `/setminingchannel` e `/unsetminingchannel` | **Removidos por completo** | Mineração não existe no LATAM |
+| `/gmc` e `/hh` | **Removidos por completo** (código, testes e emojis — decisão atualizada em 22/11/2026) | Não existem no LATAM; a abordagem antiga de responder "—" não valia a manutenção |
 | Pacote `gmctokens` | **Removido por completo** | Gerenciador de tokens do GMC de server privado antigo; referenciava tabelas que nunca existiram no schema novo |
 
-No caso do GMC/HH, optamos por manter os comandos respondendo "—" em vez de removê-los
-(`EVENT_TIMER_TYPES=['woe']` em `event_timer.py`), para não quebrar quem já conhece a interface.
-Se um dia a Gravity lançar esses eventos no LATAM, basta atualizar os agendamentos em `event_service.py`.
+No LATAM a lista de eventos (`WeeklyEvent.DATA`) só contém WoE e `EVENT_TIMER_TYPES=['woe']` em `event_timer.py`.
+Se um dia a Gravity lançar GMC/HH, basta recriar os comandos (o histórico mostra que já responderam "—" via `event_service`) e acrescentar os agendamentos.
+Para reativar `/custom` e `/mobile`, basta descomentar os blocos em `app.py` e o import correspondente (os módulos `command/custom.py` e `command/mobile.py` continuam no projeto).
 
 ## Remoção da mineração
 

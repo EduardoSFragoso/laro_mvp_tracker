@@ -81,14 +81,12 @@ Command | Description
 **/track** `name` `time` | Report that MVP `name` died. The optional `time` argument sets the exact time of death, in the `HHMM` format, relative to the configured timezone or a custom timezone set with `/timezone`.
 **/setmvpchannel** | Define the current channel as the MVP track channel.
 **/unsetmvpchannel** | Undo the MVP track channel definition.
-**/custom** | Enable/disable custom MVP respawn times. On LATAM the MVPs have no custom times seeded, so the standard windows are always used.
 **/timezone** | Set a custom timezone for tracking when the time is given in `HH:MM` syntax.
-**/mobile** | Enable/disable the mobile layout of the track table.
 **/settings** | Show the current bot settings.
 **/clean** | Remove all tracked MVPs from the table (useful after a server reboot).
 **/woe** | Show the War of Emperium (WoE) schedule: every Sunday, 8 PM to 10 PM server time (UTC-3).
-**/gmc** | Show Game Master Challenge times — no events scheduled on LATAM.
-**/hh** | Show Battleground Happy Hour times — no events scheduled on LATAM.
+
+> **Note:** the original project's `/custom`, `/mobile`, `/gmc` and `/hh` commands are disabled/stripped on LATAM — custom and mobile have no use on this server, and GMC and Happy Hour do not exist on LATAM.
 
 ## MVP list (LATAM)
 

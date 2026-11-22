@@ -14,8 +14,9 @@ from yellowtracker.util.date_util import fmt_time_short, get_dt_now
 
 log = logging.getLogger(__name__)
 
-# Event types cycled for the bot presence: candidates are 'hh', 'woe' and 'gmc'.
-# On the Ragnarok Online LATAM server only WoE runs on a fixed weekly schedule.
+# Event types cycled for the bot presence.
+# On the Ragnarok Online LATAM server only WoE runs on a fixed weekly schedule
+# (GMC e Happy Hour estão removidos do projeto; ver docs/decisoes.md).
 EVENT_TIMER_TYPES = ['woe']
 
 
@@ -46,11 +47,7 @@ class EventTimer:
     @staticmethod
     def get_msg_prefix(evt: dict) -> str:
         msg = ''
-        if evt['type'] == 'hh':
-            msg += Emoji.HH.value
-        elif evt['type'] == 'woe':
+        if evt['type'] == 'woe':
             msg += Emoji.WOE.value
-        elif evt['type'] == 'gmc':
-            msg += Emoji.GMC.value
         msg += evt['name']
         return msg

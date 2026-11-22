@@ -81,14 +81,12 @@ Comando | Descrição
 **/track** `nome` `hora` | Registra que o MVP `nome` morreu. O argumento `hora` determina o horário exato da morte, no formato `HHMM`, relativo à timezone configurada ou a uma timezone customizada definida com `/timezone`.
 **/setmvpchannel** | Define o canal atual como canal de rastreio de MVPs.
 **/unsetmvpchannel** | Cancela o canal de rastreio de MVPs.
-**/custom** | Ativa/desativa tempos de respawn customizados. No LATAM os MVPs não têm tempos custom cadastrados, então o padrão é sempre usado.
 **/timezone** | Define uma timezone customizada para o rastreio quando o horário é informado via `HH:MM`.
-**/mobile** | Ativa/desativa o layout mobile da tabela.
 **/settings** | Mostra as configurações atuais do bot.
 **/clean** | Remove todos os MVPs rastreados da tabela (útil após reinícios do servidor).
 **/woe** | Mostra o horário da Guerra do Emperium (WoE): todo domingo, das 20h às 22h (horário do servidor, UTC-3).
-**/gmc** | Mostra os horários de Game Master Challenge — sem eventos programados no LATAM.
-**/hh** | Mostra os horários de Battleground Happy Hour — sem eventos programados no LATAM.
+
+> **Nota:** os comandos `/custom`, `/mobile`, `/gmc` e `/hh` do projeto original estão desativados/sem código no LATAM — custom e mobile não têm uso no servidor, e GMC e Happy Hour não existem no LATAM.
 
 ## Lista de MVPs (LATAM)
 

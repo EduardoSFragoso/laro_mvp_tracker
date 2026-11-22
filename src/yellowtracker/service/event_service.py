@@ -25,24 +25,6 @@ def get_woe_map(bot: Bot) -> dict[str, str]:
     )
 
 
-def get_gmc_map(bot: Bot) -> dict[str, str]:
-    """Map the GMC events onto today/tomorrow embed fields."""
-    return _evt_map(bot, 'gmc', keys=('today', 'tomorrow'), key_of=_today_or_tomorrow_key)
-
-
-def get_hh_map(bot: Bot) -> dict[str, str]:
-    """Map the Happy Hour events onto today/tomorrow embed fields."""
-    return _evt_map(bot, 'hh', keys=('today', 'tomorrow'), key_of=_today_or_tomorrow_key)
-
-
-def _today_or_tomorrow_key(weekday: int, weekday_today: int, weekday_tomorrow: int) -> str | None:
-    if weekday == weekday_today:
-        return 'today'
-    if weekday == weekday_tomorrow:
-        return 'tomorrow'
-    return None
-
-
 def _evt_map(
     bot: Bot, type: str, keys: tuple[str, ...], key_of: Callable[[int, int, int], str | None]
 ) -> dict[str, str]:

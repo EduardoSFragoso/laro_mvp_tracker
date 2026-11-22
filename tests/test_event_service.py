@@ -36,11 +36,11 @@ def test_get_next_evt_returns_event():
     assert 'name' in evt and 'dt_begin' in evt and 'dt_end' in evt
 
 
-def test_get_next_evt_empty_type_returns_none():
-    # GMC e Happy Hour não existem no LATAM: a lista está vazia e o serviço
+def test_get_next_evt_unknown_type_returns_none():
+    # Tipo de evento inexistente no LATAM: a lista está vazia e o serviço
     # deve responder graciosamente em vez de quebrar.
     bot = stub_bot()
-    evt, ongoing = event_service.get_next_evt(bot, type='gmc')
+    evt, ongoing = event_service.get_next_evt(bot, type='inexistente')
     assert evt is None
     assert ongoing is False
 
@@ -51,11 +51,3 @@ def test_woe_map_handles_empty_ok():
     assert woe_map['next'] != ''
     assert woe_map['sunday'] != '' and woe_map['sunday'] != '\n'
     assert 'WoE' in woe_map['sunday']
-
-
-def test_gmc_map_empty_is_graceful():
-    bot = stub_bot()
-    gmc_map = event_service.get_gmc_map(bot)
-    assert gmc_map['ongoing'] == ''
-    assert gmc_map['next']  # placeholder dentro do mapa
-    assert gmc_map['next'] != '\n'

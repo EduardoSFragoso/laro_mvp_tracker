@@ -7,10 +7,7 @@ import discord
 
 from yellowtracker.command import (
     clean,
-    custom,
-    gmc,
-    hh,
-    mobile,
+    # custom,  # /custom desligado no LATAM (ver docs/decisoes.md)
     set_mvp_channel,
     settings,
     track,
@@ -45,9 +42,11 @@ async def _clean(interaction: discord.Interaction):
     await clean.clean(interaction, bot)
 
 
-@tree.command(name='custom', description='Enable/disable custom MVP respawn times')
-async def _custom(interaction: discord.Interaction):
-    await custom.custom_cmd(interaction, bot)
+# /custom desligado no LATAM: MVPs não têm tempos custom cadastrados (o padrão
+# do schema já cobre). Reativar: descomentar e importar yellowtracker.command.custom.
+# @tree.command(name='custom', description='Enable/disable custom MVP respawn times')
+# async def _custom(interaction: discord.Interaction):
+#     await custom.custom_cmd(interaction, bot)
 
 
 @tree.command(name='timezone', description='Define a custom timezone for MVP tracking')
@@ -60,9 +59,11 @@ async def _unsettimezone(interaction: discord.Interaction):
     await unsettimezone.unsettimezone_cmd(interaction, bot)
 
 
-@tree.command(name='mobile', description='Enable/disable MVP list mobile layout')
-async def _mobile(interaction: discord.Interaction):
-    await mobile.mobile(interaction, bot)
+# /mobile desligado no LATAM (feature antiga do server original).
+# Reativar: descomentar e importar yellowtracker.command.mobile.
+# @tree.command(name='mobile', description='Enable/disable MVP list mobile layout')
+# async def _mobile(interaction: discord.Interaction):
+#     await mobile.mobile(interaction, bot)
 
 
 @tree.command(name='setmvpchannel', description='Define a channel to track MVPs')
@@ -88,16 +89,6 @@ async def _unsetmvpchannel(interaction: discord.Interaction):
 @tree.command(name='woe', description='Show War of Emperium times')
 async def _woe(interaction: discord.Interaction):
     await woe.woe(interaction, bot)
-
-
-@tree.command(name='gmc', description='Show GM Challenge times')
-async def _gmc(interaction: discord.Interaction):
-    await gmc.gmc(interaction, bot)
-
-
-@tree.command(name='hh', description='Show BG Happy Hour times')
-async def _hh(interaction: discord.Interaction):
-    await hh.hh(interaction, bot)
 
 
 @bot.event
