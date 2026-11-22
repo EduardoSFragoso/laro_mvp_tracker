@@ -21,6 +21,10 @@ class Settings:
     timezone: str = DEFAULT_TIMEZONE
     command_prefix: str = '!'
     guild_id: int | None = None
+    # Monitoramento (deploy em servidor; ver docs/hosting-oracle.md)
+    health_port: int = 8080  # 0 desabilita o servidor HTTP de healthcheck
+    heartbeat_url: str | None = None  # URL de heartbeat externo (UptimeRobot etc.)
+    heartbeat_secs: int = 60
 
 
 def load_settings(env_file: str | None = '.env') -> Settings:
@@ -41,4 +45,7 @@ def load_settings(env_file: str | None = '.env') -> Settings:
         timezone=os.getenv('TIMEZONE', default=DEFAULT_TIMEZONE),
         command_prefix=os.getenv('COMMAND_PREFIX', default='!'),
         guild_id=int(guild_id_raw) if guild_id_raw is not None else None,
+        health_port=int_env('HEALTH_PORT', 8080),
+        heartbeat_url=os.getenv('HEARTBEAT_URL') or None,
+        heartbeat_secs=int_env('HEARTBEAT_SECS', 60),
     )

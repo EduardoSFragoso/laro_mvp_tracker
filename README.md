@@ -41,8 +41,10 @@ A raiz tem um `docker-compose.yml` que sobe **Postgres (com schema + seed LATAM 
 1. Copie `.env.example` para `.env` na raiz e preencha ao menos `BOT_USER_TOKEN` (a `DATABASE_URL` é sobrescrita pelo compose para apontar ao serviço `db`).
 2. `docker compose up --build`
 
+> Para hospedar o bot 24/7 em uma VM Oracle Cloud (Always Free) com auto-recuperação e alarmes externos, veja [docs/hosting-oracle.md](docs/hosting-oracle.md).
+
 O volume `laro_pgdata` persiste os dados; para recomeçar do zero, `docker compose down -v` (na próxima subida o SQL é aplicado de novo).
-Para usar só o Postgres e rodar o bot localmente (a partir de `src`, com `python app.py`): `docker compose up -d db` — nesse caso use `postgres://postgres:postgres@localhost:5432/laro` na `DATABASE_URL`.
+Para usar só o Postgres e rodar o bot localmente (a partir de `src`, com `python app.py`): descomente o `ports` do serviço `db` no compose (`docker compose up -d db`) — nesse caso use `postgres://postgres:postgres@localhost:5432/laro` na `DATABASE_URL`.
 
 ## Atualizando um banco já existente
 

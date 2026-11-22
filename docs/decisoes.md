@@ -92,6 +92,14 @@ Quando o `r1` (início da janela de respawn) de um MVP rastreado cruza 0, o time
 
 Comandos de configuração (`!timezone`, `!unsettimezone`, `!setmvpchannel`, `!unsetmvpchannel`, `!setpingrole`, `!unsetpingrole`, `!clean`) exigem a permissão **Gerenciar Servidor** (checagem `guild_permissions.manage_guild` no `_dispatch_cmd`). Motivo: sem o gate, qualquer membro podia trocar o canal de track e a role pingada. `!track`, `!woe` e `!settings` (leitura) continuam abertos. Comandos de dono do bot em DM (`!guilds` etc.) já eram restritos.
 
+## Monitoramento para o deploy (VM Oracle)
+
+Camadas, do mais interno ao mais externo (ver `docs/hosting-oracle.md`):
+
+- **Auto-recuperação local**: `restart: unless-stopped` no compose + Docker habilitado no boot da VM. O Postgres não publica porta (rede interna do compose apenas).
+- **Healthcheck do Docker**: o bot expõe `GET /health` (aiohttp, porta `HEALTH_PORT`, padrão 8080, não publicada e desligável com `HEALTH_PORT=0`); responde 200 só depois de `tracker_ready`. O healthcheck do compose marca o container `unhealthy` se o bot travar sem crashar.
+- **Alarme externo**: o bot faz ping (`GET`) em `HEARTBEAT_URL` a cada `HEARTBEAT_SECS` (default 60s); um monitor externo (UptimeRobot/Better Stack) alerta quando os pings param — cobre queda da VM inteira, que o healthcheck local não vê. Ping falho não derruba o bot; `monitoring_service.py`.
+
 ## Pendências (não bloqueiam o repo)
 
 1. ~~`.env` real (token do bot + `DATABASE_URL`) para smoke test com Discord + Postgres~~ **Feito**: bot conectou via Docker (`docker compose up -d`), sincronizou slash commands e subiu o pool do Postgres (22/11/2026).

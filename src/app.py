@@ -63,7 +63,14 @@ async def _run_timer(bot: Bot) -> None:
 
 
 async def main() -> None:
-    await asyncio.gather(_run_bot(bot), _run_timer(bot))
+    from yellowtracker.service import monitoring_service
+
+    await asyncio.gather(
+        _run_bot(bot),
+        _run_timer(bot),
+        monitoring_service.run_health_server(bot),
+        monitoring_service.run_heartbeat(bot),
+    )
 
 
 if __name__ == '__main__':
