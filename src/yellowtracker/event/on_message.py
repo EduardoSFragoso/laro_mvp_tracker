@@ -71,10 +71,14 @@ async def _dispatch_cmd(bot: Bot, message: discord.Message) -> None:
     elif sub == 'unsetmvpchannel':
         await unset_mvp_channel.unsetmvpchannel_core(bot, message)
     else:
-        await message.channel.send(
-            'Comando "' + sub + '" não existe. Digite `' + prefix + '` ou `' + prefix + ' help` '
-            'para ver os comandos disponíveis.'
-        )
+        # Com um prefixo curto (ex.: '!'), mensagens de outros bots/usuarios que
+        # coincidam nao devem gerar ruido: sinaliza desconhecido so no canal de track.
+        guild_state = bot.get_guild_state(message.guild.id)
+        if guild_state is not None and guild_state.channel_states.get(message.channel.id) is not None:
+            await message.channel.send(
+                'Comando "' + sub + '" não existe. Digite `' + prefix + '` ou `' + prefix + ' help` '
+                'para ver os comandos disponíveis.'
+            )
 
 
 async def _cmd_track(bot: Bot, message: discord.Message, prefix: str, args: list[str]) -> None:

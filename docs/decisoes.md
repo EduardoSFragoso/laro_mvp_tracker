@@ -70,10 +70,10 @@ A tabela de rastreio (e o select de desambiguação) mostra o **código kRO do m
 
 ## Comandos por prefixo de mensagem (sem slash commands)
 
-Os comandos do bot deixaram de ser slash commands e passaram a ser **mensagens com prefixo** (padrão `!mvp`, configurável em `COMMAND_PREFIX`), porque a lista `/` do Discord mistura os comandos de todos os bots do server e poluía a busca. Decisões:
+Os comandos do bot deixaram de ser slash commands e passaram a ser **mensagens com prefixo** (padrão `!`, configurável em `COMMAND_PREFIX`), porque a lista `/` do Discord mistura os comandos de todos os bots do server e poluía a busca. Como o prefixo só tem um caractere, a resposta de "comando não existe" só é enviada dentro do canal de rastreio — fora dele, `!qualquer-coisa` de outros bots é ignorado sem ruído. Decisões:
 
 - `LaroCommandTree`, todos os `@tree.command`, o autocomplete e os `tree.sync` foram removidos de `src/app.py`; `on_ready`/`on_guild_join` não sincronizam mais nada e `GUILD_ID` ficou sem efeito
-- A interpretação acontece no `on_message` (`_dispatch_cmd`): `!mvp track|woe|settings|clean|timezone|unsettimezone|setmvpchannel|unsetmvpchannel|custom|mobile` + `!mvp`/`!mvp help`; desconhecidos respondem com dica; mensagens sem o prefixo são ignoradas (e apagadas pela rotina de limpeza)
+- A interpretação acontece no `on_message` (`_dispatch_cmd`): `!track|woe|settings|clean|timezone|unsettimezone|setmvpchannel|unsetmvpchannel|custom|mobile` + `!`/`!help`; desconhecidos respondem com dica; mensagens sem o prefixo são ignoradas (e apagadas pela rotina de limpeza)
 - Os módulos em `command/` foram convertidos em funções `*_core(bot, message, ...)` reutilizáveis; `custom` e `mobile` continuam desligados (não despachados)
 - O botão **➕ TRACK MVP** e o modal continuam como interface alternativa (o modal não suporta autocomplete na API do Discord — feature request aberta, discussion #6212 do discord-api; select menu em modal limita a 25 opções < 64 MVPs)
 - **Mensagem fixa de instruções**: canal de track agora tem, antes da tabela, um embed "📖 Como usar" persistente (`ChannelState.id_help_message`), recriado/reordenado automaticamente pelo `init_channel` e protegido da rotina de limpeza
