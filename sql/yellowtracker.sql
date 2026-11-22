@@ -1,4 +1,15 @@
 /*
+Yellow Tracker — initial database structure and seed data
+Server: Ragnarök Online LATAM (ro.gnjoylatam.com)
+
+MVP list based on the community tracker data for Ragnarok Online LATAM
+(names and respawn windows as seen in-game, in pt-BR).
+id_mob holds the mob id used for the track table thumbnail (ratemyserver.net);
+it may be NULL, in which case no thumbnail is shown.
+
+Command to (re)apply the MVP seed on an existing database: sql/seed_mvp_latam.sql
+*/
+
 DROP TABLE IF EXISTS mining_guild_log;
 DROP TABLE IF EXISTS mining_guild;
 DROP TABLE IF EXISTS mining;
@@ -10,7 +21,6 @@ DROP TABLE IF EXISTS guild;
 DROP TABLE IF EXISTS global_parameter;
 DROP SEQUENCE IF EXISTS mvp_seq;
 DROP SEQUENCE IF EXISTS mining_seq;
-*/
 
 CREATE SEQUENCE mvp_seq;
 CREATE SEQUENCE mining_seq;
@@ -40,7 +50,7 @@ CREATE TABLE mvp (
     t2 integer NOT NULL,
     t1custom integer,
     t2custom integer,
-    id_mob integer NOT NULL,
+    id_mob integer,
     CONSTRAINT mvp_pk PRIMARY KEY (id)
 );
 
@@ -88,102 +98,144 @@ CREATE TABLE mining_guild_log (
 
 INSERT INTO global_parameter(id)VALUES(1);
 
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Amon Ra','moc_pryd06',60,70,55,75,1511);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Atroce','ra_fild02',240,250,210,270,1785);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Atrora2');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Atroce','ra_fild03',180,190,150,210,1785);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Atrora3');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Atroce','ra_fild04',300,310,270,330,1785);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Atrora4');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Atroce','ve_fild01',180,190,150,210,1785);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Atrove1');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Atroce','ve_fild02',360,370,330,390,1785);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Atrove2');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Baphomet','prt_maze03',120,130,105,135,1039);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Beelzebub','abbey03',720,730,540,840,1873);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Bio3 MVP','lhz_dun03',100,130,NULL,NULL,1646);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Bio4 MVP','lhz_dun04',100,130,NULL,NULL,2237);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Boitata','bra_dun02',120,130,105,135,2068);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Dark Lord','gl_chyard',60,70,55,75,1272);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'DL');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Detardeurus','abyss_03',180,190,150,210,1719);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Detale');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Doppelganger','gef_dun02',120,130,105,135,1046);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Dracula','gef_dun01',60,70,55,70,1389);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Drake','treasure02',120,130,105,135,1112);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Eddga','pay_fild11',120,130,105,135,1115);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Egnigem Cenia','lhz_dun02',120,130,NULL,NULL,1658);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'GEC');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Evil Snake Lord','gon_dun03',94,104,84,114,1418);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'ESL');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Fallen Bishop','abbey02',120,130,105,135,1871);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'FBH');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Garm','xmas_fild01',120,130,105,135,1252);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Hatii');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Gloom Under Night','ra_san05',300,310,270,330,1768);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Golden Thief Bug','prt_sewb4',60,70,55,75,1086);
+-- ---------------------------------------------------------------------------
+-- MVPs (Ragnarok Online LATAM) — name, map, min/max respawn (mins), mob id
+-- ---------------------------------------------------------------------------
+
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Abelha-Rainha','Monte Mjolnir (4)',120,130,1059);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Mistress');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Amon Ra','Subsolo da Pirâmide (2)',60,70,1511);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Amon Ra do Pesadelo','Subsolo da Pirâmide (2) - Pesadelo',60,70,2362);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Nightmare Amon Ra');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Aranha Rainha','Porão de Glastheim',120,130,20421);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Brinaranea');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Árvore de Pitaya','Estufa de Pitayas',360,370,20648);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Pitaya');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Atroce','Planície de Ida',180,190,1785);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Atroce Ida');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Atroce','Pradaria Audhumbla',300,310,1785);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Atroce Audhumbla');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Atroce','Arredores de Veins (1)',180,190,1785);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Atroce Veins');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Atroce','Arredores de Veins (2)',360,370,1785);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Atroce Veins 2');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Bafomé','Labirinto da Floresta (3)',120,130,1039);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Baphomet');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Bafomé Amaldiçoado','Castelo Amaldiçoado',120,130,2483);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Cursed Baphomet');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Belzebu','Monastério (3)',720,730,1873);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Beelzebub');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Besouro-Ladrão Dourado','Esgotos de Prontera (4)',60,70,1086);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'GTB');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Gold Queen Scaraba','dic_dun03',120,120,105,135,2165);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'GQS');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Gopinich','mosk_dun03',120,130,105,135,1885);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Hardrock Mammoth','man_fild03',240,241,210,270,1990);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Mammoth');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Ifrit','thor_v03',660,670,540,780,1832);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Incantation Samurai','ama_dun03',91,101,75,120,1542);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Samurai Specter');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Kiel D-01','kh_dun02',120,180,NULL,NULL,1734);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Kraken','iz_dun05',120,130,105,135,2202);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Ktullanux','ice_dun03',120,120,NULL,NULL,1779);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Kublin','arug_dun01',240,360,NULL,NULL,1980);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Kublin','mocg_dun',240,360,NULL,NULL,1980);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Kublin','schg_dun01',240,360,NULL,NULL,1980);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Lady Tanee','ayo_dun02',420,430,360,385,1688);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Golden Thief Bug');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Bispo Decadente','Monastério (2)',120,130,1871);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'FBH');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Fallen Bishop');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Boitatá','Profundezas das Cataratas',120,130,2068);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Boitata');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Bruxa da Morte','Calabouço de Niflheim - Ópera em Ruínas',180,190,NULL);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Death Witch');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Cavaleiro da Tempestade','Fábrica de Brinquedos (2)',67,77,1251);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'SK');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Stormy Knight');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Detale Esqueleto','Caverna Subterrânea do Lago do Abismo (4)',180,190,20618);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Skeleton Detale');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Detardeurus','Caverna Subterrânea do Lago do Abismo (3)',180,190,1719);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Detale');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Doppelganger','Calabouço de Geffen (2)',120,130,1046);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Drácula','Calabouço de Geffen (1)',60,70,1389);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Dracula');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Drake','Navio Fantasma (2)',120,130,1112);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Eddga','Floresta de Payon (10)',120,130,1115);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Espadachim Egnigem','Biolaboratório (2)',120,130,1658);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'GEC');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Egnigem Cenia');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Faraó','Esfinge (5)',60,70,1157);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Pharaoh');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Flor do Luar','Caverna de Payon (4)',60,70,1150);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'MF');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Moonlight Flower');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Freeoni','Deserto de Sograt (17)',120,130,1159);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Phreeoni');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Gemaring','Ninho do Dragão (1)',60,70,3505);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('General Tartaruga','Palácio Tartaruga',60,70,1312);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'TG');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Turtle General');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Gorynych','Floresta Encantada (3)',120,130,NULL);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Hatii','Arredores de Lutie',120,130,1252);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Garm');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Ifrit','Vulcão de Thor (3)',660,670,1832);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Imperatriz Scaraba','Caverna Scaraba - Pesadelo',120,130,NULL);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Empress Scaraba');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Jungoliant','Calabouço da Mina (3)',120,130,20601);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Jewel Ungoliant');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Kiel-D-01','Fábrica de Robôs (2)',120,180,1734);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Kiel');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Kraken','Túnel Submarino (5)',140,150,2202);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Lady Branca','Suei Long Gon',116,126,1630);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'WL');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'White Lady');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Bacsojin');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Lady Tanee','Santuário Ancestral',420,430,1688);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'LT');
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Tanee');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Leak','dew_dun01',120,130,75,105,2156);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Lord of the Dead','niflheim',133,133,NULL,NULL,1373);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'LOD');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Maya','anthell02',120,130,105,135,1147);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Maya Purple','anthell01',120,180,NULL,NULL,1289);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'MP');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Maya Purple','gld_dun03',20,30,NULL,NULL,1289);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'MP');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Mistress','mjolnir_04',120,130,105,135,1059);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Moonlight Flower','pay_dun04',60,70,55,75,1150);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'MF');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Nightmare Amon Ra','moc_prydn2',60,70,55,75,2362);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Orc Hero','gef_fild02',1440,1450,NULL,NULL,1087);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'OH');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Orc Hero','gef_fild14',60,70,55,75,1087);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'OH');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Orc Lord','gef_fild10',120,130,105,135,1190);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'OL');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Osiris','moc_pryd04',60,180,NULL,NULL,1038);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Pharaoh','in_sphinx5',60,70,55,75,1157);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Phreeoni','moc_fild17',120,130,105,135,1159);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Queen Scaraba','dic_dun02',120,121,105,136,2087);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'QS');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('RSX-0806','ein_dun02',125,135,110,140,1623);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Stormy Knight','xmas_dun02',60,70,55,75,1251);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'SK');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Tao Gunka','beach_dun',300,310,270,330,1583);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Tao1');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Tao Gunka','beach_dun2',300,310,270,330,1583);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Tao2');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Tao Gunka','beach_dun3',300,310,270,330,1583);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Tao3');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Tendrilion','spl_fild03',60,60,60,75,1991);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Thanatos','thana_boss',120,120,NULL,NULL,1708);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Turtle General','tur_dun04',60,70,55,75,1312);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'TG');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Valkyrie Randgris','odin_tem03',480,840,NULL,NULL,1765);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'VR');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Vesper','jupe_core',120,130,105,135,1685);
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('White Lady','lou_dun03',116,126,105,135,1630);
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Bacsojin');
-INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'WL');
-INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Wounded Morroc','moc_fild22',720,900,NULL,NULL,1917);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Leak','Vulcão Krakatau',120,130,2156);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Lorde das Trevas','Porão de Glastheim',60,70,1272);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Dark Lord');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Maya','Formigueiro Infernal (2)',120,130,1147);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Morroc Ferido','Deserto de Sograt (22)',720,730,1917);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'WM');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Wounded Morroc');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Muspellskoll','Caverna de Magma (3)',120,130,NULL);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Skoll');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Orc Herói','Arredores de Geffen (3)',60,70,1087);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'OH');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Orc Hero');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Osíris','Pirâmide (4)',60,70,1038);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Osiris');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Pesar Noturno','Santuário de Freya (5)',300,310,1768);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Gloom Under Night');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Presas Flamejantes','Labirinto de Oz (2)',360,370,NULL);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Burning Fang');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Quimera Única','Laboratório Abandonado de Amicitia',180,190,NULL);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Chimeratheone');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Quimera Venenosa','Laboratório Werner',60,70,3633);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Venomous Chimera');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('R001-Bestia','Rudus 4º Andar - Área de Descarte de Experimentos',180,190,20934);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('R48-85-Bestia','Rudus, depósito de rejeitos (2)',60,70,20381);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Rainha Scaraba','Caverna Scaraba',120,130,2087);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'QS');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Queen Scaraba');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Rei Goblin','Câmara Desconhecida da Torre do Relógio',1200,1210,NULL);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Goblin King');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('RSX-0806','Calabouço da Mina (2)',125,135,1623);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Samurai Encarnado','Templo Subterrâneo',91,101,1542);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Samurai Specter');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Senhor das Trevas','Cemitério de Glastheim',60,70,1272);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Dark Lord');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Senhor das Trevas','Cemitério Amaldiçoado',60,70,1272);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Dark Lord');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Senhor dos Mortos','Nifflheim',133,143,1373);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'LOD');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Lord of the Dead');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Senhor dos Orcs','Arredores de Geffen (10)',120,130,1190);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'OL');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Orc Lord');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Serpente Suprema','Terra das Fadas',94,104,1418);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'ESL');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Evil Snake Lord');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Tao Gunka','Karu, a Caverna do Oeste',300,310,1583);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Tao');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Valquíria Randgris','Templo de Odin (3)',480,490,1765);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'VR');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Valkyrie Randgris');
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Vesper','Centro de Juperos',120,130,1685);
+INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Vigia do Tempo','Torre Distorcida (3)',120,130,3074);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Time Holder');
+
+-- ---------------------------------------------------------------------------
+-- Mining locations
+-- ---------------------------------------------------------------------------
 
 INSERT INTO mining(name)VALUES('Payon Dungeon F1, F2');
 INSERT INTO mining(name)VALUES('Coal Mine Entrance, F1, F2, F3');

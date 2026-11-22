@@ -1,35 +1,33 @@
-import os
+from __future__ import annotations
+
 import discord
 from asyncpg.pool import Pool
-from dotenv import load_dotenv
 
-load_dotenv()
+from yellowtracker.config import Settings
+from yellowtracker.domain.models import GuildState, Mvp, MiningLocation
+
 
 class Bot(discord.Client):
+    """The bot client plus the shared runtime state of the application."""
 
-    BOT_USER_TOKEN = os.getenv("BOT_USER_TOKEN")
-    DATABASE_URL = os.getenv("DATABASE_URL")
-    DEL_MSG_AFTER_SECS = int(os.getenv("DEL_MSG_AFTER_SECS", default=10))
-    TABLE_ENTRY_EXPIRATION_MINS = int(os.getenv("TABLE_ENTRY_EXPIRATION_MINS", default=20))
-    TIMER_DELAY_SECS = int(os.getenv("TIMER_DELAY_SECS", default=5))
-    TIMEZONE = os.getenv("TIMEZONE", default="PST8PDT")
-    GUILD_ID = os.getenv("GUILD_ID")
-
-    def __init__(self, **kwargs):
+    def __init__(self, settings: Settings, **kwargs):
         super().__init__(**kwargs)
-        self.pool: Pool = None
-        self.guild_state_map = {}
-        self.mvp_list = []
-        self.mining_list = []
-        self.race_time = None
+        self.settings = settings
+        self.pool: Pool | None = None
+        self.guild_states: dict[int, GuildState] = {}
+        self.mvp_list: list[Mvp] = []
+        self.mining_list: list[MiningLocation] = []
         self.tracker_ready = False
+
+    def get_guild_state(self, id_guild: int) -> GuildState | None:
+        return self.guild_states.get(id_guild)
 
     async def pool_acquire(self):
         if self.pool is None:
-            raise Exception("Pool is None")
+            raise Exception('Pool is None')
         return await self.pool.acquire()
 
     async def pool_release(self, conn):
         if self.pool is None:
-            raise Exception("Pool is None")
+            raise Exception('Pool is None')
         return await self.pool.release(conn)

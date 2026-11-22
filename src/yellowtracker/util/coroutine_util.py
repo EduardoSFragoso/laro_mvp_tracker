@@ -1,21 +1,17 @@
+from __future__ import annotations
+
 import logging
-import traceback
 
 log = logging.getLogger(__name__)
 
-class CoroutineUtil:
 
-    @staticmethod
-    async def run(coroutine):
-        try:
-            return await coroutine
-        except BaseException:
-            log.error(f"Unexpected error.\n{CoroutineUtil.get_stack_str()}", exc_info=True)
+async def run_coro(coroutine):
+    """Run a coroutine, logging (instead of raising) any unexpected error.
 
-    @staticmethod
-    def get_stack_str():
-        stack_str = ""
-        stack = traceback.format_stack()
-        for e in stack:
-            stack_str += e
-        return stack_str
+    Discord callbacks should never crash the whole bot because a single
+    message/response failed, so this is the default wrapper used everywhere.
+    """
+    try:
+        return await coroutine
+    except BaseException:
+        log.error('Unexpected error.', exc_info=True)

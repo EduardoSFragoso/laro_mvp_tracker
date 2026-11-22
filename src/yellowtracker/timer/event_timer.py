@@ -1,48 +1,56 @@
+from __future__ import annotations
+
 import logging
-import discord
 from datetime import timedelta
+
+import discord
 from yellowtracker.domain.bot import Bot
 from yellowtracker.domain.emoji import Emoji
-from yellowtracker.service.event_service import EventService
-from yellowtracker.util.coroutine_util import CoroutineUtil
-from yellowtracker.util.date_util import DateUtil
+from yellowtracker.service import event_service
+from yellowtracker.util.coroutine_util import run_coro
+from yellowtracker.util.date_util import fmt_time_short, get_dt_now
 
 log = logging.getLogger(__name__)
 
+# Event types cycled for the bot presence: candidates are 'hh', 'woe' and 'gmc'.
+# On the Ragnarok Online LATAM server only WoE runs on a fixed weekly schedule.
+EVENT_TIMER_TYPES = ['woe']
+
+
 class EventTimer:
 
-    # evt_types = ['hh', 'woe', 'gmc']
-    evt_types = ['gmc']
     idx = 0
 
     @staticmethod
     async def timer(bot: Bot):
         if not bot.tracker_ready:
             return
-        if bot.ws is not None:
-            dt_now = DateUtil.get_dt_now(bot.TIMEZONE)
-            evt, ongoing = EventService.get_next_evt(bot, EventTimer.evt_types[EventTimer.idx])
-            if evt is None:
-                return
-            str = EventTimer.get_msg_prefix(evt)
-            if ongoing:
-                str += ' ends '
-                str += DateUtil.fmt_time_short((evt['dt_end'] - dt_now) / timedelta(milliseconds=1))
-            else:
-                str += ' '
-                str += DateUtil.fmt_time_short((evt['dt_begin'] - dt_now) / timedelta(milliseconds=1))
-            game = discord.Game(name=str)
-            await CoroutineUtil.run(bot.change_presence(activity=game))
-            EventTimer.idx = (EventTimer.idx + 1) % len(EventTimer.evt_types)
+        if bot.ws is None:
+            return
+        dt_now = get_dt_now(bot.settings.timezone)
+        evt, ongoing = event_service.get_next_evt(
+            bot, EVENT_TIMER_TYPES[EventTimer.idx % len(EVENT_TIMER_TYPES)])
+        if evt is None:
+            return
+        msg = EventTimer.get_msg_prefix(evt)
+        if ongoing:
+            msg += ' ends '
+            msg += fmt_time_short((evt['dt_end'] - dt_now) / timedelta(milliseconds=1))
+        else:
+            msg += ' '
+            msg += fmt_time_short((evt['dt_begin'] - dt_now) / timedelta(milliseconds=1))
+        game = discord.Game(name=msg)
+        await run_coro(bot.change_presence(activity=game))
+        EventTimer.idx = (EventTimer.idx + 1) % len(EVENT_TIMER_TYPES)
 
     @staticmethod
     def get_msg_prefix(evt: dict) -> str:
-        str = ''
+        msg = ''
         if evt['type'] == 'hh':
-            str += Emoji.HH.value
+            msg += Emoji.HH.value
         elif evt['type'] == 'woe':
-            str += Emoji.WOE.value
+            msg += Emoji.WOE.value
         elif evt['type'] == 'gmc':
-            str += Emoji.GMC.value
-        str += evt['name']
-        return str
+            msg += Emoji.GMC.value
+        msg += evt['name']
+        return msg

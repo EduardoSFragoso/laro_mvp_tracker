@@ -1,151 +1,182 @@
-# Yellow Tracker
+# Yellow Tracker (Ragnarok Online LATAM)
 
-Yellow Tracker is a discord bot to track MVPs.
+Yellow Tracker é um bot do Discord para rastrear MVPs, adaptado para o servidor **Ragnarok Online LATAM** (servidor oficial da Gravity/GNJOY LATAM).
 
-## Run local
+Baseado no [yellowtracker original](https://github.com/victorgawk/yellowtracker), refatorado (dataclasses, settings via env, services como módulos) e com a lista de MVPs, tempos de respawn e eventos atualizados para o LATAM.
 
-Prerequisites to run this application:
+## Rodar localmente
 
-- Python 3.13
-- A discord bot token
-- A PostgreSQL database
+Pré-requisitos:
 
-1. In the PostgreSQL database, use the content from the file `sql/yellowtracker.sql` to create the initial database structure.
-2. In the `src` folder, create a file named `.env` with the following variables:
+- Python 3.13+
+- Um token de bot do Discord
+- Um banco de dados PostgreSQL
+
+1. No PostgreSQL, use o conteúdo do arquivo `sql/yellowtracker.sql` para criar a estrutura inicial do banco (tabelas + lista de MVPs do LATAM).
+2. Na pasta `src`, crie um arquivo `.env` com as variáveis:
 ```properties
-# REQUIRED (bot will raise an error if it's not defined)
+# OBRIGATÓRIAS (o bot falha ao iniciar sem elas)
 
-BOT_USER_TOKEN=your discord bot token
-DATABASE_URL=your PostgresSQL URL with the syntax postgres://username:password@host:port/database
+BOT_USER_TOKEN=seu token de bot do Discord
+DATABASE_URL=sua URL do PostgreSQL no formato postgres://usuario:senha@host:porta/banco
 
-# OPTIONAL (bot will use the default value if it's not defined)
+# OPCIONAIS (o bot usa os valores padrão se não forem definidas)
 
-DEL_MSG_AFTER_SECS=time to delete a message in a track channel after message last update (default = 10 seconds)
-TABLE_ENTRY_EXPIRATION_MINS=time to remove an entry from the track table after entry max respawn was reached (default = 20 minutes)
-TIMER_DELAY_SECS=bot timer delay in seconds (default = 5 seconds)
-TIMEZONE=timezone used for datetimes in HH:MM format (default = PST8PDT)
-GUILD_ID=a single server ID to sync the slash commands (default = None)
+DEL_MSG_AFTER_SECS=tempo de exclusão de mensagem no canal de rastreio após a última atualização (padrão = 10 segundos)
+TABLE_ENTRY_EXPIRATION_MINS=tempo para remover a entrada da tabela após alcance máximo de respawn (padrão = 20 minutos)
+TIMER_DELAY_SECS=atraso do timer do bot em segundos (padrão = 5 segundos)
+TIMEZONE=timezone usada para horários em formato HH:MM (padrão = America/Sao_Paulo)
+GUILD_ID=ID de um único servidor para sincronizar os slash commands (padrão = None)
 ```
-3. Inside a terminal/command prompt, go to the `src` folder.
-4. Execute the command `pip install -r requirements.txt` to install the application dependencies.
-5. Execute the command `python app.py` to start the application.
+3. Em um terminal, vá até a pasta `src`.
+4. Execute `pip install -r requirements.txt` para instalar as dependências.
+5. Execute `python app.py` para iniciar o bot.
 
-## Usage
+## Atualizando um banco já existente
 
-Define a channel from your discord server to be used exclusively for MVP tracking (OBS: is strongly recommended that you use a new channel for this). This is done by using the **/setmvpchannel** command. The bot in this channel will keep a table with the tracked MVPs and their respective remaining times to respawn.
-  - **WARNING**: After you use this command, **ALL** messages from the channel (if there is any) will be erased and this will be irreversible!!! Be sure that you choose the right channel.
+Se o banco já tinha a lista antiga de MVPs, rode `sql/seed_mvp_latam.sql` para recriar a tabela `mvp` com os dados do LATAM:
 
-Once inside a MVP channel, there are three ways to track a MVP:
-- by sending a message with `MVP_NAME` or `MVP_NAME HHMM` syntax (OBS: requires **Message Content** intent).
-  - Examples:
-    - `amon ra 1234`
-    - `atroce`
-    - `drac 1512`
-- by pressing the **Track** button.
-- by using the **/track** command.
+```bash
+psql "$DATABASE_URL" -f sql/seed_mvp_latam.sql
+```
 
-There is a routine that periodically cleans the MVP channel in order to keep only the MVP list message (OBS: requires **Manage Channel** permission).
+⚠️ O script é transacional e remove os MVPs e apelidos atuais (apagando também os rastreios e guildas ligados a eles).
 
-OBS: In addition to MVPs, Yellow Tracker can also be used to track mining locations, where each location represents a collection with one or more maps (for instance, the mining location "Ice Dungeon (F1, F2, F3)" corresponds to the maps "ice_dun01", "ice_dun02" and "ice_dun03"). As well as MVPs, you need to define a track channel to be used exclusively for mining locations. To do this use the **/setminingchannel** command.
+## Dados do LATAM
 
-### Bot commands:
+- **Lista de MVPs**: 64 entradas com nomes e mapas em português e janelas de respawn conforme o rastreador da comunidade (meurag.com/ferramentas/mvps). Detalhes e fontes em `docs/mvp-latam.md`.
+- **Timezone padrão**: `America/Sao_Paulo` (horário de Brasília), igual ao horário do servidor (UTC-3).
+- **MVPs sem ID**: alguns MVPs novos não têm `id_mob` no banco (usado só para a miniatura da pré-visualização); o thumbnail é omitido nesses casos.
 
-Command | Description
+## Como usar
+
+Defina um canal do seu servidor do Discord para ser usado exclusivamente no rastreamento de MVPs (recomendado um canal novo para isso). Use o comando **/setmvpchannel**. Nesse canal o bot mantém uma tabela com os MVPs rastreados e os tempos restantes para o respawn.
+
+  - **ATENÇÃO**: ao usar esse comando, **TODAS** as mensagens do canal (se houver) serão apagadas de forma irreversível! Escolha o canal certo.
+
+Dentro de um canal de MVPs, há três formas de rastrear:
+- enviando uma mensagem com a sintaxe `NOME_DO_MVP` ou `NOME_DO_MVP HHMM` (requer permissão **Message Content**; aceita nome em português ou apelido em inglês — ex.: `amon ra 1234`, `atroce`, `brinaranea 1512`);
+- pressionando o botão **Track**;
+- usando o comando **/track** (completação automática por nome, apelido e mapa).
+
+Há uma rotina que limpa o canal periodicamente, mantendo apenas a mensagem da lista de MVPs (requer permissão **Manage Channel**).
+
+Além de MVPs, o bot pode rastrear pontos de mineração, onde cada ponto reúne um ou mais mapas. Use **/setminingchannel** para definir o canal de mineração.
+
+### Comandos do bot:
+
+Comando | Descrição
 ------- | ---------
-**/track** `name` `time` | Report that MVP `name` died. The optional `time` argument can be used to determine the exact time the MVP died. Ommit this argument to report that the MVP died just now. The `time` argument must have the syntax `HHMM` telling that the MVP died at `time` relative to the `TIMEZONE` environment variable or a custom timezone defined with `/timezone` command.
-**/setmvpchannel** | Define the current channel as the MVP track channel.
-**/unsetmvpchannel** | Undo the MVP channel definition in the discord server.
-**/setminingchannel** | Define the current channel as the mining location track channel.
-**/unsetminingchannel** | Undo the mining location channel definition in the discord server.
-**/custom** | Enable/disable custom MVP respawn times (e.g. GTB respawn become 45 to 75 mins instead of 60 to 70 mins, Eddga become 105 to 135 instead of 120 to 130 mins, and so on).
-**/timezone** | Set a custom timezone for MVP tracking when the time is set in `HH:MM` syntax.
-**/mobile** | Enable/disable track table mobile layout.
-**/settings** | Show current bot settings.
-**/clean** | Remove all tracked MVPs/mining locations from the table (useful after a server reboot).
-**/woe** | Display War of Emperium (WoE) times.
-**/gmc** | Display Game Master Challenge (GMC) times.
-**/hh** | Display Battleground Happy Hour times.
+**/track** `nome` `hora` | Registra que o MVP `nome` morreu. O argumento `hora` determina o horário exato da morte, no formato `HHMM`, relativo à timezone configurada ou a uma timezone customizada definida com `/timezone`.
+**/setmvpchannel** | Define o canal atual como canal de rastreio de MVPs.
+**/unsetmvpchannel** | Cancela o canal de rastreio de MVPs.
+**/setminingchannel** | Define o canal atual como canal de rastreio de mineração.
+**/unsetminingchannel** | Cancela o canal de rastreio de mineração.
+**/custom** | Ativa/desativa tempos de respawn customizados. No LATAM os MVPs não têm tempos custom cadastrados, então o padrão é sempre usado.
+**/timezone** | Define uma timezone customizada para o rastreio quando o horário é informado via `HH:MM`.
+**/mobile** | Ativa/desativa o layout mobile da tabela.
+**/settings** | Mostra as configurações atuais do bot.
+**/clean** | Remove todos os MVPs/pontos de mineração rastreados da tabela (útil após reinícios do servidor).
+**/woe** | Mostra o horário da Guerra do Emperium (WoE): todo domingo, das 20h às 22h (horário do servidor, UTC-3).
+**/gmc** | Mostra os horários de Game Master Challenge — sem eventos programados no LATAM.
+**/hh** | Mostra os horários de Battleground Happy Hour — sem eventos programados no LATAM.
 
-### MVP List:
+## Lista de MVPs (LATAM)
 
-Name | Alias | Map | Respawn Time | Custom Respawn
----- | ----- | --- | ------------ | ---------------
-Amon Ra | - | moc_pryd06 | 60~70 mins | 55~75 mins |
-Atroce | Atrora2 | ra_fild02 | 240~250 mins | 210~270 mins |
-Atroce | Atrora3 | ra_fild03 | 180~190 mins | 150~210 mins |
-Atroce | Atrora4 | ra_fild04 | 300~310 mins | 270~330 mins |
-Atroce | Atrove1 | ve_fild01 | 180~190 mins | 150~210 mins |
-Atroce | Atrove2 | ve_fild02 | 360~370 mins | 330~390 mins |
-Baphomet | - | prt_maze03 | 120~130 mins | 105~135 mins |
-Beelzebub | - | abbey03 | 720~730 mins | 540~840 mins |
-Bio3 MVP | - | lhz_dun03 | 100~130 mins | 100~130 mins |
-Bio4 MVP | - | lhz_dun04 | 100~130 mins | 100~130 mins |
-Boitata | - | bra_dun02 | 120~130 mins | 105~135 mins |
-Dark Lord | DL | gl_chyard | 60~70 mins | 55~75 mins |
-Detardeurus | Detale | abyss_03 | 180~190 mins | 150~210 mins |
-Doppelganger | - | gef_dun02 | 120~130 mins | 105~135 mins |
-Dracula | - | gef_dun01 | 60~70 mins | 55~70 mins |
-Drake | - | treasure02 | 120~130 mins | 105~135 mins |
-Eddga | - | pay_fild11 | 120~130 mins | 105~135 mins |
-Egnigem Cenia | GEC | lhz_dun02 | 120~130 mins | 120~130 mins |
-Evil Snake Lord | ESL | gon_dun03 | 94~104 mins | 84~114 mins |
-Fallen Bishop | FBH | abbey02 | 120~130 mins | 105~135 mins |
-Garm | Hatii | xmas_fild01 | 120~130 mins | 105~135 mins |
-Gloom Under Night | - | ra_san05 | 300~310 mins | 270~330 mins |
-Golden Thief Bug | GTB | prt_sewb4 | 60~70 mins | 55~75 mins |
-Gold Queen Scaraba | GQS | dic_dun03 | 120~120 mins | 105~135 mins |
-Gopinich | - | mosk_dun03 | 120~130 mins | 105~135 mins |
-Hardrock Mammoth | Mammoth | man_fild03 | 240~241 mins | 210~270 mins |
-Ifrit | - | thor_v03 | 660~670 mins | 540~780 mins |
-Incantation Samurai | Samurai Specter | ama_dun03 | 91~101 mins | 75~120 mins |
-Kiel D-01 | - | kh_dun02 | 120~180 mins | 120~180 mins |
-Kraken | - | iz_dun05 | 120~130 mins | 105~135 mins |
-Ktullanux | - | ice_dun03 | 120~120 mins | 120~120 mins |
-Kublin | - | arug_dun01 | 240~360 mins | 240~360 mins |
-Kublin | - | mocg_dun | 240~360 mins | 240~360 mins |
-Kublin | - | schg_dun01 | 240~360 mins | 240~360 mins |
-Lady Tanee | LT; Tanee | ayo_dun02 | 420~430 mins | 360~385 mins |
-Leak | - | dew_dun01 | 120~130 mins | 75~105 mins |
-Lord of the Dead | LOD | niflheim | 133~133 mins | 133~133 mins |
-Maya | - | anthell02 | 120~130 mins | 105~135 mins |
-Maya Purple | MP | anthell01 | 120~180 mins | 120~180 mins |
-Maya Purple | MP | gld_dun03 | 20~30 mins | 20~30 mins |
-Mistress | - | mjolnir_04 | 120~130 mins | 105~135 mins |
-Moonlight Flower | MF | pay_dun04 | 60~70 mins | 55~75 mins |
-Nightmare Amon Ra | - | moc_prydn2 | 60~70 mins | 55~75 mins |
-Orc Hero | OH | gef_fild02 | 1440~1450 mins | 1440~1450 mins |
-Orc Hero | OH | gef_fild14 | 60~70 mins | 55~75 mins |
-Orc Lord | OL | gef_fild10 | 120~130 mins | 105~135 mins |
-Osiris | - | moc_pryd04 | 60~180 mins | 60~180 mins |
-Pharaoh | - | in_sphinx5 | 60~70 mins | 55~75 mins |
-Phreeoni | - | moc_fild17 | 120~130 mins | 105~135 mins |
-Queen Scaraba | QS | dic_dun02 | 120~121 mins | 105~136 mins |
-RSX-0806 | - | ein_dun02 | 125~135 mins | 110~140 mins |
-Stormy Knight | SK | xmas_dun02 | 60~70 mins | 55~75 mins |
-Tao Gunka | Tao1 | beach_dun | 300~310 mins | 270~330 mins |
-Tao Gunka | Tao2 | beach_dun2 | 300~310 mins | 270~330 mins |
-Tao Gunka | Tao3 | beach_dun3 | 300~310 mins | 270~330 mins |
-Tendrilion | - | spl_fild03 | 60~60 mins | 60~75 mins |
-Thanatos | - | thana_boss | 120~120 mins | 120~120 mins |
-Turtle General | TG | tur_dun04 | 60~70 mins | 55~75 mins |
-Valkyrie Randgris | VR | odin_tem03 | 480~840 mins | 480~840 mins |
-Vesper | - | jupe_core | 120~130 mins | 105~135 mins |
-White Lady | Bacsojin; WL | lou_dun03 | 116~126 mins | 105~135 mins |
-Wounded Morroc | WM | moc_fild22 | 720~900 mins | 720~900 mins |
+Nomes e mapas conforme o servidor; respawn em minutos, conforme o rastreador da comunidade LATAM. "Apelidos" são os nomes reconhecidos em inglês no rastreio (além do nome em português).
 
-### Mining locations:
+Nome | Apelidos | Mapa | Respawn
+---- | -------- | ---- | -------
+Abelha-Rainha | Mistress | Monte Mjolnir (4) | 120~130 min
+Amon Ra | — | Subsolo da Pirâmide (2) | 60~70 min
+Amon Ra do Pesadelo | Nightmare Amon Ra | Subsolo da Pirâmide (2) - Pesadelo | 60~70 min
+Aranha Rainha | Brinaranea | Porão de Glastheim | 120~130 min
+Árvore de Pitaya | Pitaya | Estufa de Pitayas | 360~370 min
+Atroce | Atroce Ida | Planície de Ida | 180~190 min
+Atroce | Atroce Audhumbla | Pradaria Audhumbla | 300~310 min
+Atroce | Atroce Veins | Arredores de Veins (1) | 180~190 min
+Atroce | Atroce Veins 2 | Arredores de Veins (2) | 360~370 min
+Bafomé | Baphomet | Labirinto da Floresta (3) | 120~130 min
+Bafomé Amaldiçoado | Cursed Baphomet | Castelo Amaldiçoado | 120~130 min
+Belzebu | Beelzebub | Monastério (3) | 720~730 min
+Besouro-Ladrão Dourado | GTB, Golden Thief Bug | Esgotos de Prontera (4) | 60~70 min
+Bispo Decadente | FBH, Fallen Bishop | Monastério (2) | 120~130 min
+Boitatá | Boitata | Profundezas das Cataratas | 120~130 min
+Bruxa da Morte | Death Witch | Calabouço de Niflheim - Ópera em Ruínas | 180~190 min
+Cavaleiro da Tempestade | SK, Stormy Knight | Fábrica de Brinquedos (2) | 67~77 min
+Detale Esqueleto | Skeleton Detale | Caverna Subterrânea do Lago do Abismo (4) | 180~190 min
+Detardeurus | Detale | Caverna Subterrânea do Lago do Abismo (3) | 180~190 min
+Doppelganger | — | Calabouço de Geffen (2) | 120~130 min
+Drácula | Dracula | Calabouço de Geffen (1) | 60~70 min
+Drake | — | Navio Fantasma (2) | 120~130 min
+Eddga | — | Floresta de Payon (10) | 120~130 min
+Espadachim Egnigem | GEC, Egnigem Cenia | Biolaboratório (2) | 120~130 min
+Faraó | Pharaoh | Esfinge (5) | 60~70 min
+Flor do Luar | MF, Moonlight Flower | Caverna de Payon (4) | 60~70 min
+Freeoni | Phreeoni | Deserto de Sograt (17) | 120~130 min
+Gemaring | — | Ninho do Dragão (1) | 60~70 min
+General Tartaruga | TG, Turtle General | Palácio Tartaruga | 60~70 min
+Gorynych | — | Floresta Encantada (3) | 120~130 min
+Hatii | Garm | Arredores de Lutie | 120~130 min
+Ifrit | — | Vulcão de Thor (3) | 660~670 min
+Imperatriz Scaraba | Empress Scaraba | Caverna Scaraba - Pesadelo | 120~130 min
+Jungoliant | Jewel Ungoliant | Calabouço da Mina (3) | 120~130 min
+Kiel-D-01 | Kiel | Fábrica de Robôs (2) | 120~180 min
+Kraken | — | Túnel Submarino (5) | 140~150 min
+Lady Branca | WL, White Lady, Bacsojin | Suei Long Gon | 116~126 min
+Lady Tanee | LT, Tanee | Santuário Ancestral | 420~430 min
+Leak | — | Vulcão Krakatau | 120~130 min
+Lorde das Trevas | Dark Lord | Porão de Glastheim | 60~70 min
+Maya | — | Formigueiro Infernal (2) | 120~130 min
+Morroc Ferido | WM, Wounded Morroc | Deserto de Sograt (22) | 720~730 min
+Muspellskoll | Skoll | Caverna de Magma (3) | 120~130 min
+Orc Herói | OH, Orc Hero | Arredores de Geffen (3) | 60~70 min
+Osíris | Osiris | Pirâmide (4) | 60~70 min
+Pesar Noturno | Gloom Under Night | Santuário de Freya (5) | 300~310 min
+Presas Flamejantes | Burning Fang | Labirinto de Oz (2) | 360~370 min
+Quimera Única | Chimeratheone | Laboratório Abandonado de Amicitia | 180~190 min
+Quimera Venenosa | Venomous Chimera | Laboratório Werner | 60~70 min
+R001-Bestia | — | Rudus 4º Andar - Área de Descarte de Experimentos | 180~190 min
+R48-85-Bestia | — | Rudus, depósito de rejeitos (2) | 60~70 min
+Rainha Scaraba | QS, Queen Scaraba | Caverna Scaraba | 120~130 min
+Rei Goblin | Goblin King | Câmara Desconhecida da Torre do Relógio | 1200~1210 min
+RSX-0806 | — | Calabouço da Mina (2) | 125~135 min
+Samurai Encarnado | Samurai Specter | Templo Subterrâneo | 91~101 min
+Senhor das Trevas | Dark Lord | Cemitério de Glastheim | 60~70 min
+Senhor das Trevas | Dark Lord | Cemitério Amaldiçoado | 60~70 min
+Senhor dos Mortos | LOD, Lord of the Dead | Nifflheim | 133~143 min
+Senhor dos Orcs | OL, Orc Lord | Arredores de Geffen (10) | 120~130 min
+Serpente Suprema | ESL, Evil Snake Lord | Terra das Fadas | 94~104 min
+Tao Gunka | Tao | Karu, a Caverna do Oeste | 300~310 min
+Valquíria Randgris | VR, Valkyrie Randgris | Templo de Odin (3) | 480~490 min
+Vesper | — | Centro de Juperos | 120~130 min
+Vigia do Tempo | Time Holder | Torre Distorcida (3) | 120~130 min
 
-Name|
-----|
-Byalan Dungeon (F1, F2, F3, F4, F5)|
-Coal Mine (Entrance, F1, F2, F3)|
-Comodo (West, North, East)|
-Einbech Dungeon (Entrance, F1, F2)|
-Geffen Dungeon (F1, F2, F3)|
-Ice Dungeon (F1, F2, F3)|
-Louyang (F1, F2)|
-Magma Dungeon (F1, F2)|
-Mistress Map|
-Payon Dungeon (F1, F2)|
-Thor Volcano (F1, F2, F3)|
-Umbala Dungeon (F1, F2)|
+## Pontos de mineração
+
+Nome
+----
+Payon Dungeon F1, F2
+Coal Mine Entrance, F1, F2, F3
+Einbech Dungeon Entrance, F1, F2
+Geffen Dungeon F1, F2, F3
+Thor Volcano F1, F2, F3
+Magma Dungeon F1, F2
+Ice Dungeon F1, F2, F3
+Byalan Dungeon F1, F2, F3, F4, F5
+Louyang F1, F2
+Comodo West, North, East
+Mistress Map
+Umbala Dungeon F1, F2
+
+## Testes e validação
+
+```bash
+pip install -r requirements.txt pytest
+pytest
+python scripts/validate_sql.py  # valida sintaxe e contagens do SQL (requer sqlglot)
+```
+
+## Deploy no Fly.io
+
+O projeto mantém os arquivos `fly.toml` e `docker-compose.yml`/`Dockerfile` originais. No Docker, configure o `docker.env` com `BOT_USER_TOKEN` e `DATABASE_URL`.

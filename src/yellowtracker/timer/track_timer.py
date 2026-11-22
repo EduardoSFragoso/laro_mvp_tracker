@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 import logging
+
+import discord
 from yellowtracker.domain.bot import Bot
+from yellowtracker.domain.models import ChannelState
 from yellowtracker.domain.track_type import TrackType
-from yellowtracker.service.channel_service import ChannelService
-from yellowtracker.util.track_util import TrackUtil
+from yellowtracker.service import channel_service
+from yellowtracker.util import track_util
 
 log = logging.getLogger(__name__)
+
 
 class TrackTimer:
 
@@ -13,20 +19,19 @@ class TrackTimer:
         if not bot.tracker_ready:
             return
         for guild in bot.guilds:
-            guild_state = bot.guild_state_map.get(guild.id)
+            guild_state = bot.get_guild_state(guild.id)
             if guild_state is None:
                 continue
-            for id_channel in guild_state['channel_state_map'].copy():
-                channel_state = guild_state['channel_state_map'].get(id_channel)
-                if channel_state is None:
-                    continue
-                if len(channel_state['entry_state_list']) > 0:
-                    for entry_state in channel_state['entry_state_list']:
-                        TrackUtil.calc_remaining_time(entry_state, entry_state['track_time'], channel_state['type'])
-                    await ChannelService.update_channel_message(bot, channel_state)
-                channel = ChannelService.get_channel_from_guild(guild, channel_state['id_channel'])
+            for channel_state in list(guild_state.channel_states.values()):
+                update_needed = len(channel_state.entry_states) > 0
+                if update_needed:
+                    for entry_state in channel_state.entry_states:
+                        track_util.calc_remaining_time(
+                            entry_state, entry_state.track_time, channel_state.type)
+                    await channel_service.update_channel_message(bot, channel_state)
+                channel = channel_service.get_channel_from_guild(guild, channel_state.id_channel)
                 if channel is None:
                     continue
-                if ChannelService.validate_channel(bot, channel) is not None:
+                if channel_service.validate_channel(bot, channel) is not None:
                     continue
-                await ChannelService.delete_msgs(bot, channel_state, channel)
+                await channel_service.delete_msgs(bot, channel_state, channel)

@@ -1,0 +1,90 @@
+from __future__ import annotations
+
+from collections import deque
+from dataclasses import dataclass, field
+from datetime import datetime
+
+from yellowtracker.domain.track_type import TrackType
+
+
+@dataclass
+class Mvp:
+    """An MVP entry as loaded from the database."""
+
+    id: int
+    name: str
+    map: str
+    t1: int  # minimum respawn time in minutes
+    t2: int  # maximum respawn time in minutes
+    t1custom: int | None = None
+    t2custom: int | None = None
+    id_mob: int | None = None
+    alias: list[str] = field(default_factory=list)
+
+
+@dataclass
+class MiningLocation:
+    """A mining location entry as loaded from the database."""
+
+    id: int
+    name: str
+    t1: int  # tracking window in minutes
+    alias: list[str] = field(default_factory=list)
+
+
+@dataclass
+class EntryLog:
+    """A log entry for the last tracked MVPs/mining locations of a channel."""
+
+    entry: Mvp | MiningLocation
+    date: datetime
+    id_user: int
+
+
+@dataclass
+class TrackEntryState:
+    """Runtime state of a tracked entry within a channel."""
+
+    entry: Mvp | MiningLocation
+    track_time: datetime
+    t1: int  # effective window, in minutes
+    t2: int | None = None  # None when the channel type is MINING
+    r1: int = -999
+    r2: int = -999
+
+
+@dataclass
+class ChannelState:
+    """Runtime state of a track channel."""
+
+    id_channel: int
+    id_guild: int
+    type: TrackType
+    id_message: int | None = None
+    entry_states: list[TrackEntryState] = field(default_factory=list)
+    entry_logs: deque[EntryLog] = field(default_factory=deque)
+
+
+@dataclass
+class GuildState:
+    """Runtime state of a guild (discord server)."""
+
+    id_guild: int
+    custom: bool = True
+    mobile: bool = False
+    timezone: str | None = None
+    id_mvp_channel: int | None = None
+    id_mining_channel: int | None = None
+    channel_states: dict[int, ChannelState] = field(default_factory=dict)
+
+    def get_channel_state(self, type: TrackType) -> ChannelState | None:
+        return next(
+            (cs for cs in self.channel_states.values() if cs.type == type),
+            None,
+        )
+
+    def remove_channel_state(self, type: TrackType) -> ChannelState | None:
+        channel_state = self.get_channel_state(type)
+        if channel_state is not None:
+            del self.channel_states[channel_state.id_channel]
+        return channel_state
