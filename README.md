@@ -73,6 +73,8 @@ Dentro de um canal de MVPs, há duas formas de rastrear:
 
 Quando a janela de respawn de um MVP abrir (início do tempo mínimo de respawn), o bot posta um aviso no canal de track e mostra até que horário a janela fica aberta — o aviso **fica no canal até a última janela fechar** (não é apagado pela limpeza automática). Por padrão o aviso **não pinga ninguém**; com `!setpingrole @role` o bot passa a pingar a role escolhida (nunca `@here`/`@everyone`) a cada janela nova que abrir.
 
+Comandos de configuração (`!timezone`, `!setmvpchannel`/`!unsetmvpchannel`, `!setpingrole`/`!unsetpingrole`, `!clean`) exigem a permissão **Gerenciar Servidor**.
+
 Os comandos são **mensagens com prefixo** (padrão `!`, configurável em `COMMAND_PREFIX`) — em vez de slash commands — para não aparecer misturados aos comandos de outros bots na lista `/`. A tabela exibe o **código kRO do mapa** (navi, ex.: `gon_dun03`) em vez do nome em português. Só mensagens que começam com o prefixo são processadas; as demais são apagadas automaticamente pela rotina de limpeza do canal (requer permissão **Manage Messages**).
 
 Como não há mais lista de comandos na barra `/`, a descoberta funciona assim:

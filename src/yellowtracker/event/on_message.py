@@ -14,6 +14,12 @@ from yellowtracker.service import channel_service
 
 log = logging.getLogger(__name__)
 
+# Comandos que alteram configuração do servidor: restritos a quem tem a
+# permissão Gerenciar Servidor (donos/admins do Discord sempre passam).
+ADMIN_COMMANDS = frozenset(
+    {'clean', 'setmvpchannel', 'unsetmvpchannel', 'setpingrole', 'unsetpingrole', 'timezone', 'unsettimezone'}
+)
+
 
 async def on_message(bot: Bot, message: discord.Message) -> None:
     if bot.user.id == message.author.id:
@@ -50,6 +56,9 @@ async def _dispatch_cmd(bot: Bot, message: discord.Message) -> None:
         return
     sub = parts[0].lower()
     args = parts[1:]
+    if sub in ADMIN_COMMANDS and not _is_guild_admin(message):
+        await message.channel.send('Você precisa da permissão **Gerenciar Servidor** para usar este comando.')
+        return
     if sub == 'help':
         await _reply_help(bot, message)
     elif sub == 'track':
@@ -201,6 +210,11 @@ async def _send_paginated(
         embed.add_field(name=header, value=msg, inline=False)
         embed.set_footer(text=f'{offset} to {offset + count - 1} (Total: {len(lines)})')
         await dm_channel.send(embed=embed)
+
+
+def _is_guild_admin(message: discord.Message) -> bool:
+    author = message.author
+    return isinstance(author, discord.Member) and author.guild_permissions.manage_guild
 
 
 def _is_dm_channel_message(bot: Bot, message: discord.Message) -> bool:

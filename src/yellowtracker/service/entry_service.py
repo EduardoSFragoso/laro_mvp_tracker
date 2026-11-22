@@ -81,7 +81,10 @@ async def load_db_entries(bot: Bot, conn: asyncpg.Connection) -> None:
         channel_state = guild_state.get_channel_state(TrackType.MVP)
         if channel_state is None:
             continue
-        track_util.track_entry(channel_state, entry, db_entry_guild['track_time'])
+        entry_state = track_util.track_entry(channel_state, entry, db_entry_guild['track_time'])
+        # track_entry reseta notified=False; restaura o valor persistido para
+        # não re-pingar uma janela que já foi avisada antes do restart.
+        entry_state.notified = db_entry_guild['notified']
     await _load_db_entries_log(bot, conn)
 
 

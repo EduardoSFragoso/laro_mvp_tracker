@@ -201,7 +201,10 @@ async def update_track_time(
         entry_guild_db = await conn.fetch(read_sql, entry.id, channel_state.id_guild)
         write_sql = f'INSERT INTO {row_sql}_guild(id_{row_sql},id_guild,track_time)VALUES($1,$2,$3)'
         if len(entry_guild_db) > 0:
-            write_sql = f'UPDATE {row_sql}_guild SET track_time=$3 WHERE id_{row_sql}=$1 AND id_guild=$2'
+            # Re-rastrear zera notified (novo ciclo de respawn) no banco também.
+            write_sql = (
+                f'UPDATE {row_sql}_guild SET track_time=$3, notified=FALSE WHERE id_{row_sql}=$1 AND id_guild=$2'
+            )
         await conn.execute(write_sql, entry.id, channel_state.id_guild, track_time)
 
         read_sql = f'SELECT * FROM {row_sql}_guild_log WHERE id_{row_sql}=$1 AND id_guild=$2'
@@ -270,6 +273,17 @@ async def update_notification(bot: Bot, channel_state: ChannelState, open_entrie
     if new_windows:
         for entry_state in open_entries:
             entry_state.notified = True
+        # Persiste a flag para sobreviver a restarts (não re-pinga).
+        conn = await bot.pool_acquire()
+        try:
+            sql = (
+                f'UPDATE {channel_state.type.sql_desc}_guild '
+                f'SET notified=TRUE WHERE id_{channel_state.type.sql_desc}=$1 AND id_guild=$2'
+            )
+            for entry_state in open_entries:
+                await conn.execute(sql, entry_state.entry.id, channel_state.id_guild)
+        finally:
+            await bot.pool_release(conn)
     guild_state = bot.get_guild_state(channel_state.id_guild)
     if guild_state is None:
         return

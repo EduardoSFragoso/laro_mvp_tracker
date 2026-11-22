@@ -83,10 +83,14 @@ Os comandos do bot deixaram de ser slash commands e passaram a ser **mensagens c
 
 Quando o `r1` (início da janela de respawn) de um MVP rastreado cruza 0, o timer do bot manda uma mensagem no canal de track com o horário aproximado de fechamento da janela (`r2`). Detalhes:
 
-- Flag `TrackEntryState.notified` evita ping duplicado; o re-rastreio do mesmo MVP a reseta (`track_util.track_entry`)
+- Flag `TrackEntryState.notified` evita ping duplicado; o re-rastreio do mesmo MVP a reseta (`track_util.track_entry` e `UPDATE ... notified=FALSE` em `update_track_time`). A flag é **persistida** na coluna `mvp_guild.notified`: marcada `TRUE` no banco quando o aviso é enviado e restaurada no `load_db_entries`, então restart não re-pinga janelas já avisadas
 - Dispara só na transição (`r1` em {0, -1}), então um MVP rastreado tarde não dispara ping atrasado nem na inicialização
 - **Mensagem viva**: o aviso é um embed `ChannelState.notification_message` que permanece no canal enquanto houver janela aberta (`r1 <= 0 <= r2`) e é deletado quando a última fecha — ele nunca desaparece aos 10s (`DEL_MSG_AFTER_SECS`) como as outras mensagens (exceção em `is_msg_can_be_deleted`). No restart, o aviso existente é adotado (e duplicados, apagados) por `init_channel`
 - **Ping opcional de role**: por padrão o aviso é silencioso (sem menção). `!setpingrole @role` grava `guild.id_notification_role` e passa a pingar só essa role quando uma janela nova abre; `!unsetpingrole` volta ao silencioso. Nunca se usa `@here`/`@everyone` — em canais populosos um ping geral seria invasivo (`AllowedMentions.none()` ou roles=[role])
+
+## Permissões dos comandos
+
+Comandos de configuração (`!timezone`, `!unsettimezone`, `!setmvpchannel`, `!unsetmvpchannel`, `!setpingrole`, `!unsetpingrole`, `!clean`) exigem a permissão **Gerenciar Servidor** (checagem `guild_permissions.manage_guild` no `_dispatch_cmd`). Motivo: sem o gate, qualquer membro podia trocar o canal de track e a role pingada. `!track`, `!woe` e `!settings` (leitura) continuam abertos. Comandos de dono do bot em DM (`!guilds` etc.) já eram restritos.
 
 ## Pendências (não bloqueiam o repo)
 

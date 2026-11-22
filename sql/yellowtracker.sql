@@ -59,6 +59,7 @@ CREATE TABLE mvp_guild (
     id_mvp integer NOT NULL,
     id_guild bigint NOT NULL,
     track_time timestamp without time zone NOT NULL,
+    notified boolean NOT NULL DEFAULT FALSE,
     CONSTRAINT mvp_guild_pk PRIMARY KEY (id_mvp, id_guild)
 );
 
