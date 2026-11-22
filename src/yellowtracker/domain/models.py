@@ -47,7 +47,6 @@ class TrackEntryState:
     t2: int = -999
     r1: int = -999
     r2: int = -999
-    notified: bool = False  # window-open notification already sent
 
 
 @dataclass

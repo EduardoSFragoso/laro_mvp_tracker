@@ -102,13 +102,3 @@ def test_fmt_column_joins_with_newlines():
     assert track_util.fmt_column(['a', 'b']) == 'a\nb'
     assert track_util.fmt_column(['a']) == 'a'
     assert track_util.fmt_column([]) == ''
-
-
-def test_track_entry_resets_notified_flag():
-    channel_state = make_mvp_channel()
-    mvp = make_mvp()
-    now = datetime.now()
-    entry_state = track_util.track_entry(channel_state, mvp, now)
-    entry_state.notified = True
-    track_util.track_entry(channel_state, mvp, now + timedelta(minutes=30))
-    assert entry_state.notified is False

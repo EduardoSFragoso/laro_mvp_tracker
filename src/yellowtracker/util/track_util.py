@@ -22,7 +22,6 @@ def track_entry(channel_state: ChannelState, entry: Mvp, track_time: datetime, c
         entry_state.t2 = entry.t2custom
 
     entry_state.track_time = track_time
-    entry_state.notified = False
     calc_remaining_time(entry_state, track_time)
     channel_state.entry_states.sort(key=lambda e: e.r2)
     return entry_state
