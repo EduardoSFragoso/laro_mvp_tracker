@@ -4,6 +4,8 @@ from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
 
+import discord
+
 from yellowtracker.domain.track_type import TrackType
 
 
@@ -59,6 +61,9 @@ class ChannelState:
     type: TrackType
     id_message: int | None = None
     id_help_message: int | None = None
+    # Mensagem viva do aviso de janela de respawn (fica enquanto houver
+    # janela aberta; não passa pela rotina de limpeza do canal).
+    notification_message: discord.Message | None = None
     entry_states: list[TrackEntryState] = field(default_factory=list)
     entry_logs: deque[EntryLog] = field(default_factory=deque)
 

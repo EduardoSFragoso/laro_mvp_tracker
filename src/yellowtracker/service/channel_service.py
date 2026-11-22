@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 import time
 from datetime import datetime, timedelta
@@ -20,6 +21,7 @@ log = logging.getLogger(__name__)
 TABLE_MAX_ROWS = 20
 
 HELP_EMBED_TITLE = ':book: Como usar'
+NOTIFICATION_EMBED_TITLE = ':bell: Janelas de respawn abertas'
 
 
 def get_guild_from_bot(bot: Bot, id_guild: int) -> discord.Guild | None:
@@ -249,38 +251,88 @@ def _fmt_track_reply(entry_state, user_time: str) -> str:
 # --------------------------------------------------------------------------
 
 
-async def notify_entries(bot: Bot, channel_state: ChannelState, entry_states: list) -> None:
-    """Announce MVPs whose respawn window just opened (r1 <= 0) in the track channel."""
+async def update_notification(bot: Bot, channel_state: ChannelState, open_entries: list, new_windows: bool) -> None:
+    """Keep a live notification message for MVPs whose respawn window is open.
+
+    With no open window there is no message; when windows are open the message
+    persists (heading the channel) until the last window closes. Only a brand
+    new window pings the configured role — ongoing updates are silent edits.
+    """
+    channel = get_channel_from_bot(bot, channel_state.id_guild, channel_state.id_channel)
+    if channel is None:
+        return
+    # No open window: remove the message if it still exists.
+    if len(open_entries) == 0:
+        if channel_state.notification_message is not None:
+            await _delete_notification(channel_state)
+        return
+    # Newly opened windows (re)start notifications and ping the role.
+    if new_windows:
+        for entry_state in open_entries:
+            entry_state.notified = True
     guild_state = bot.get_guild_state(channel_state.id_guild)
     if guild_state is None:
         return
     timezone = guild_state.timezone or bot.settings.timezone
+    embed = _notification_embed(timezone, open_entries)
+    msg = channel_state.notification_message
+    if msg is None:
+        content = None
+        allowed_mentions = discord.AllowedMentions.none()
+        role_id = guild_state.id_notification_role
+        if new_windows and role_id is not None:
+            role = get_guild_from_bot(bot, guild_state.id_guild).get_role(role_id)
+            if role is not None:
+                content = role.mention
+                allowed_mentions = discord.AllowedMentions(roles=[role])
+        try:
+            sent = await run_coro(channel.send(content, embed=embed, allowed_mentions=allowed_mentions))
+        except discord.DiscordException:
+            log.error('Error sending notification message.', exc_info=True)
+            return
+        channel_state.notification_message = sent
+    else:
+        await _edit_notification(bot, channel_state, msg, embed, guild_state, role_ping=new_windows)
+
+
+def _notification_embed(timezone: str, open_entries: list) -> discord.Embed:
     now = get_dt_now(timezone)
-    for entry_state in entry_states:
-        entry_state.notified = True
     lines = []
-    for entry_state in entry_states:
+    for entry_state in sorted(open_entries, key=lambda e: int(e.r2)):
         end = (now + timedelta(minutes=int(entry_state.r2))).strftime('%H:%M')
         lines.append(
             '- **' + entry_state.entry.name + '** (' + entry_state.entry.display_map + ') — janela aberta até ~' + end
         )
-    content = ':bell: **MVPs na janela de respawn:**\n' + '\n'.join(lines)
-    role = None
-    if guild_state.id_notification_role is not None:
+    return discord.Embed(colour=discord.Colour.gold(), title=NOTIFICATION_EMBED_TITLE, description='\n'.join(lines))
+
+
+async def _edit_notification(
+    bot: Bot, channel_state: ChannelState, msg: discord.Message, embed: discord.Embed, guild_state, role_ping: bool
+) -> None:
+    # Skip the edit when nothing changed (the timer runs every minute).
+    old_description = msg.embeds[0].description if len(msg.embeds) > 0 else None
+    if old_description == embed.description and not role_ping:
+        return
+    # A new window opening (role_ping) mentions the role again on the edit.
+    content = None
+    allowed_mentions = discord.AllowedMentions.none()
+    if role_ping and guild_state.id_notification_role is not None:
         role = get_guild_from_bot(bot, guild_state.id_guild).get_role(guild_state.id_notification_role)
         if role is not None:
-            content = role.mention + ' ' + content
-    channel = get_channel_from_bot(bot, channel_state.id_guild, channel_state.id_channel)
-    if channel is None:
-        return
-    if validate_channel(bot, channel) is not None:
-        return
-    # Pinga no máximo a role configurada (nunca @here/@everyone): em canais
-    # populosos um ping geral seria invasivo. Sem role, aviso silencioso.
-    allowed_mentions = discord.AllowedMentions.none()
-    if role is not None:
-        allowed_mentions = discord.AllowedMentions(roles=[role])
-    await run_coro(channel.send(content, allowed_mentions=allowed_mentions))
+            content = role.mention
+            allowed_mentions = discord.AllowedMentions(roles=[role])
+    try:
+        await run_coro(msg.edit(content=content, embed=embed, allowed_mentions=allowed_mentions))
+    except discord.DiscordException:
+        # Message deleted by someone: drop the reference; the next tick sends a new one.
+        channel_state.notification_message = None
+
+
+async def _delete_notification(channel_state: ChannelState) -> None:
+    msg = channel_state.notification_message
+    channel_state.notification_message = None
+    with contextlib.suppress(discord.DiscordException):
+        await run_coro(msg.delete())
 
 
 # --------------------------------------------------------------------------
@@ -298,6 +350,7 @@ async def init_channel(bot: Bot, channel_state: ChannelState) -> None:
     channel_state.id_help_message = None
     help_msg = None
     table_msg = None
+    notification_msg = None
     async for msg in channel.history():
         if msg.type != discord.MessageType.default or msg.author != bot.user:
             continue
@@ -306,6 +359,15 @@ async def init_channel(bot: Bot, channel_state: ChannelState) -> None:
             help_msg = msg
         elif embed_title == ':crown: MVPs' and table_msg is None:
             table_msg = msg
+        elif embed_title == NOTIFICATION_EMBED_TITLE:
+            # Restart: adota o aviso mais recente; duplicados são apagados.
+            if notification_msg is None:
+                notification_msg = msg
+            else:
+                try:
+                    await run_coro(msg.delete())
+                except discord.DiscordException:
+                    log.error('Unexpected error deleting duplicate notification message.', exc_info=True)
         if help_msg is not None and table_msg is not None:
             break
     if table_msg is not None and (help_msg is None or help_msg.created_at > table_msg.created_at):
@@ -323,8 +385,21 @@ async def init_channel(bot: Bot, channel_state: ChannelState) -> None:
         await send_help_message(bot, channel_state, help_msg)
     if table_msg is not None:
         channel_state.id_message = table_msg.id
+    channel_state.notification_message = notification_msg
     await update_channel_message(bot, channel_state)
     await delete_msgs(bot, channel_state, channel)
+    # Depois da limpeza, um aviso adotado sem janelas abertas é removido.
+    await _prune_notification(bot, channel_state)
+
+
+async def _prune_notification(bot: Bot, channel_state: ChannelState) -> None:
+    if channel_state.notification_message is None:
+        return
+    open_entries = [
+        entry_state for entry_state in channel_state.entry_states if int(entry_state.r1) <= 0 <= int(entry_state.r2)
+    ]
+    if len(open_entries) == 0:
+        await _delete_notification(channel_state)
 
 
 def get_help_description(prefix: str) -> str:
@@ -347,7 +422,8 @@ def get_help_description(prefix: str) -> str:
         f'- `{p}setpingrole` / `{p}unsetpingrole` — role pingada no aviso de respawn\n'
         '\n'
         ':bell: Quando a janela de respawn de um MVP abrir, o bot avisa aqui '
-        '(pingando a role cadastrada em `' + p + 'setpingrole`, se houver).\n'
+        '(pingando a role cadastrada em `' + p + 'setpingrole`, se houver); '
+        'o aviso fica no canal até a última janela fechar.\n'
         '\n'
         f':warning: Só mensagens que começam com `{p}` são processadas. '
         'As demais são apagadas automaticamente.'
@@ -391,6 +467,10 @@ def is_msg_can_be_deleted(bot: Bot, channel_state: ChannelState, msg: discord.Me
     if channel_state.id_message is not None and channel_state.id_message == msg.id:
         return False
     if channel_state.id_help_message is not None and channel_state.id_help_message == msg.id:
+        return False
+    # O aviso de janela de respawn é gerenciado pelo timer (some quando a
+    # última janela fecha); a rotina de limpeza não pode apagá-lo antes.
+    if channel_state.notification_message is not None and channel_state.notification_message.id == msg.id:
         return False
     if datetime.utcnow() - msg.created_at.replace(tzinfo=None) >= timedelta(days=14):
         return False

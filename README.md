@@ -71,7 +71,7 @@ Dentro de um canal de MVPs, há duas formas de rastrear:
 - digitando **!track NOME_DE_MVP** (sem horário = morreu agora) ou **!track NOME_DE_MVP HHMM** (requer permissão **Message Content**; aceita nome em português ou apelido em inglês — ex.: `!track amon ra 1234`, `!track atroce`, `!track brinaranea 1512`);
 - pressionando o botão **➕ TRACK MVP** (abre um formulário no Discord).
 
-Quando a janela de respawn de um MVP abrir (início do tempo mínimo de respawn), o bot avisa no canal de track e mostra até que horário a janela fica aberta. Por padrão o aviso **não pinga ninguém**; com `!setpingrole @role` o bot passa a pingar a role escolhida (nunca `@here`/`@everyone`).
+Quando a janela de respawn de um MVP abrir (início do tempo mínimo de respawn), o bot posta um aviso no canal de track e mostra até que horário a janela fica aberta — o aviso **fica no canal até a última janela fechar** (não é apagado pela limpeza automática). Por padrão o aviso **não pinga ninguém**; com `!setpingrole @role` o bot passa a pingar a role escolhida (nunca `@here`/`@everyone`) a cada janela nova que abrir.
 
 Os comandos são **mensagens com prefixo** (padrão `!`, configurável em `COMMAND_PREFIX`) — em vez de slash commands — para não aparecer misturados aos comandos de outros bots na lista `/`. A tabela exibe o **código kRO do mapa** (navi, ex.: `gon_dun03`) em vez do nome em português. Só mensagens que começam com o prefixo são processadas; as demais são apagadas automaticamente pela rotina de limpeza do canal (requer permissão **Manage Messages**).
 

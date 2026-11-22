@@ -71,7 +71,7 @@ Inside an MVP channel, there are two ways to track a MVP:
 - typing **!track MVP_NAME** (no time = died now) or **!track MVP_NAME HHMM** (requires the **Message Content** intent; accepts the Portuguese name or the English alias — e.g. `!track amon ra 1234`, `!track atroce`, `!track brinaranea 1512`);
 - pressing the **➕ TRACK MVP** button (opens a form).
 
-When an MVP's respawn window opens (start of the min respawn time), the bot announces it in the track channel, including until what time the window stays open. By default the announcement **pings nobody**; with `!setpingrole @role` the bot pings the chosen role (never `@here`/`@everyone`).
+When an MVP's respawn window opens (start of the min respawn time), the bot posts an announcement in the track channel, including until what time the window stays open — the announcement **stays in the channel until the last window closes** (it is not removed by the automatic cleaning). By default the announcement **pings nobody**; with `!setpingrole @role` the bot pings the chosen role (never `@here`/`@everyone`) each time a new window opens.
 
 Commands are **prefix-based messages** (default `!`, configurable in `COMMAND_PREFIX`) — instead of slash commands — so they do not mix with the slash commands of other bots on the `/` list. The table shows the **kRO map code** (navi, e.g. `gon_dun03`) instead of the Portuguese map name. Only messages starting with the prefix are processed; anything else is deleted automatically by the channel cleaning routine (requires the **Manage Messages** permission).
 
