@@ -61,5 +61,5 @@ Um documento de padrões (`AGENTS.md`, não versionado no repo) guiou o último 
 
 ## Pendências (não bloqueiam o repo)
 
-1. `.env` real (token do bot + `DATABASE_URL`) para smoke test com Discord + Postgres — o modelo `.env.example` da raiz já lista as variáveis e o `docker-compose.yml` sobe Postgres + bot
-2. Validação do SQL num Postgres de verdade (a validação atual é estática, via `scripts/validate_sql.py` + sqlglot): basta `docker compose up -d db` — na primeira subida o Postgres aplica `sql/yellowtracker.sql` + `sql/seed_mvp_latam.sql` sozinho (excluindo o legado `gmctokens.sql`)
+1. ~~`.env` real (token do bot + `DATABASE_URL`) para smoke test com Discord + Postgres~~ **Feito**: bot conectou via Docker (`docker compose up -d`), sincronizou slash commands e subiu o pool do Postgres (22/11/2026).
+2. ~~Validação do SQL num Postgres de verdade~~ **Feito**: o Postgres do Docker aplicou `sql/yellowtracker.sql` + `sql/seed_mvp_latam.sql` na primeira subida; `SELECT count(*) FROM mvp` = 64 (22/11/2026). A validação estática continua disponível via `scripts/validate_sql.py`.
