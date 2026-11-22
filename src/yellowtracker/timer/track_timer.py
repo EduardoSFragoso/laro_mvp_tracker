@@ -23,7 +23,7 @@ class TrackTimer:
                 update_needed = len(channel_state.entry_states) > 0
                 if update_needed:
                     for entry_state in channel_state.entry_states:
-                        track_util.calc_remaining_time(entry_state, entry_state.track_time, channel_state.type)
+                        track_util.calc_remaining_time(entry_state, entry_state.track_time)
                     await channel_service.update_channel_message(bot, channel_state)
                 channel = channel_service.get_channel_from_guild(guild, channel_state.id_channel)
                 if channel is None:

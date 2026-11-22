@@ -34,7 +34,22 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 bot = Bot(settings_cfg, intents=intents)
-tree = discord.app_commands.CommandTree(bot)
+
+
+class LaroCommandTree(discord.app_commands.CommandTree):
+    """Reject interactions that arrive before the runtime state is loaded."""
+
+    def __init__(self, bot: Bot):
+        super().__init__(bot)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if not bot.tracker_ready:
+            await interaction.response.send_message('Bot is still starting up, try again in a moment.', ephemeral=True)
+            return False
+        return True
+
+
+tree = LaroCommandTree(bot)
 
 
 @tree.command(name='clean', description='Remove all tracked MVPs from the list')

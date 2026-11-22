@@ -12,7 +12,10 @@ async def track(interaction: discord.Interaction, bot: Bot, mvp: str, user_time:
     if validate_msg is not None:
         await run_coro(interaction.response.send_message(validate_msg))
         return
-    guild_state = bot.guild_states[interaction.guild_id]
+    guild_state = bot.get_guild_state(interaction.guild_id)
+    if guild_state is None:
+        await run_coro(interaction.response.send_message('Bot is still starting up, try again in a moment.'))
+        return
     channel_state = guild_state.channel_states.get(interaction.channel_id)
     if channel_state is None:
         await run_coro(interaction.response.send_message('This command can only be used in a track channel.'))

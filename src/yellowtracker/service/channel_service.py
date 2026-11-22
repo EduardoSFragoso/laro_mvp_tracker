@@ -102,7 +102,9 @@ def _resolve_query(
 async def track_by_message(
     bot: Bot, message: discord.Message, channel_state: ChannelState, mvp: str, user_time: str
 ) -> None:
-    guild_state = bot.guild_states[message.channel.guild.id]
+    guild_state = bot.get_guild_state(message.channel.guild.id)
+    if guild_state is None:
+        return
     results, mins_ago, error = _resolve_query(bot, guild_state, channel_state, mvp, user_time)
     if error is not None:
         await run_coro(message.channel.send(error))
@@ -115,7 +117,9 @@ async def track_by_message(
 async def track_by_interaction(
     bot: Bot, interaction: discord.Interaction, channel_state: ChannelState, mvp: str, user_time: str
 ) -> None:
-    guild_state = bot.guild_states[interaction.channel.guild.id]
+    guild_state = bot.get_guild_state(interaction.channel.guild.id)
+    if guild_state is None:
+        return
     results, mins_ago, error = _resolve_query(bot, guild_state, channel_state, mvp, user_time)
     if error is not None:
         await run_coro(interaction.response.send_message(error))
