@@ -6,7 +6,7 @@ import logging
 import aiohttp
 from aiohttp import web
 
-from yellowtracker.domain.bot import Bot
+from laro.domain.bot import Bot
 
 
 log = logging.getLogger(__name__)

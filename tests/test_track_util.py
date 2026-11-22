@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
-from yellowtracker.domain.models import ChannelState, Mvp, TrackEntryState
-from yellowtracker.domain.track_type import TrackType
-from yellowtracker.util import track_util
+from laro.domain.models import ChannelState, Mvp, TrackEntryState
+from laro.domain.track_type import TrackType
+from laro.util import track_util
 
 
 def make_mvp_channel(mobile=False):

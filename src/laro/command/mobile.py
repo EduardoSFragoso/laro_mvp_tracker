@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import discord
 
-from yellowtracker.domain.bot import Bot
-from yellowtracker.service import channel_service
-from yellowtracker.util.coroutine_util import run_coro
+from laro.domain.bot import Bot
+from laro.service import channel_service
+from laro.util.coroutine_util import run_coro
 
 
 async def mobile_core(bot: Bot, message: discord.Message) -> None:

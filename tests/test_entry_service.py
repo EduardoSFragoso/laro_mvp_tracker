@@ -1,5 +1,5 @@
-from yellowtracker.domain.models import Mvp
-from yellowtracker.service.entry_service import ac_entries, find_entry
+from laro.domain.models import Mvp
+from laro.service.entry_service import ac_entries, find_entry
 
 
 class StubBot:

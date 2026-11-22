@@ -7,9 +7,9 @@ from datetime import timedelta
 import discord
 from pytz import timezone
 
-from yellowtracker.domain.bot import Bot
-from yellowtracker.domain.weekly_event import WeeklyEvent
-from yellowtracker.util.date_util import fmt_dt, get_dt_now, get_local_tzinfo
+from laro.domain.bot import Bot
+from laro.domain.weekly_event import WeeklyEvent
+from laro.util.date_util import fmt_dt, get_dt_now, get_local_tzinfo
 
 
 EMPTY_SLOT = '—'

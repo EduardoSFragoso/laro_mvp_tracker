@@ -5,13 +5,13 @@ import logging
 
 import discord
 
-from yellowtracker.config import load_settings
-from yellowtracker.domain.bot import Bot
-from yellowtracker.domain.exceptions import BotConfigurationError
-from yellowtracker.event.on_guild_join import on_guild_join as on_guild_join_evt
-from yellowtracker.event.on_guild_remove import on_guild_remove as on_guild_remove_evt
-from yellowtracker.event.on_message import on_message as on_message_evt
-from yellowtracker.event.on_ready import on_ready as on_ready_evt
+from laro.config import load_settings
+from laro.domain.bot import Bot
+from laro.domain.exceptions import BotConfigurationError
+from laro.event.on_guild_join import on_guild_join as on_guild_join_evt
+from laro.event.on_guild_remove import on_guild_remove as on_guild_remove_evt
+from laro.event.on_message import on_message as on_message_evt
+from laro.event.on_ready import on_ready as on_ready_evt
 
 
 log = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ async def _run_bot(bot: Bot) -> None:
 
 async def _run_timer(bot: Bot) -> None:
     log.info('Start timer.')
-    from yellowtracker.timer import event_timer, track_timer
+    from laro.timer import event_timer, track_timer
 
     while True:
         await event_timer.EventTimer.timer(bot)
@@ -63,7 +63,7 @@ async def _run_timer(bot: Bot) -> None:
 
 
 async def main() -> None:
-    from yellowtracker.service import monitoring_service
+    from laro.service import monitoring_service
 
     await asyncio.gather(
         _run_bot(bot),

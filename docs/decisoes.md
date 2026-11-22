@@ -1,6 +1,6 @@
 # Decisões do projeto (histórico do refactor)
 
-Registro das decisões tomadas ao refatorar o [yellowtracker](https://github.com/victorgawk/yellowtracker)
+Registro das decisões tomadas ao refatorar o [Yellow Tracker](https://github.com/victorgawk/yellowtracker)
 para o **Ragnarok Online LATAM** (servidor oficial da Gravity/GNJOY LATAM, lançado em 28/05/2025).
 Este projeto foi movido para o repo público [laro_mvp_tracker](https://github.com/EduardoSFragoso/laro_mvp_tracker).
 
@@ -56,15 +56,15 @@ Um documento de padrões (`AGENTS.md`, não versionado no repo) guiou o último 
 
 ## Ambiente local (Docker)
 
-- `docker-compose.yml` (raiz) refeito: serviço `db` (postgres:16, aplica `sql/yellowtracker.sql` + `sql/seed_mvp_latam.sql` na primeira subida; volume `laro_pgdata` persiste, `down -v` recomeça do zero) + serviço `bot` (build do `Dockerfile`, `depends_on` com healthcheck do Postgres)
-- `.env.example` na raiz lista todas as variáveis carregadas por `src/yellowtracker/config.py`
+- `docker-compose.yml` (raiz) refeito: serviço `db` (postgres:16, aplica `sql/laro.sql` + `sql/seed_mvp_latam.sql` na primeira subida; volume `laro_pgdata` persiste, `down -v` recomeça do zero) + serviço `bot` (build do `Dockerfile`, `depends_on` com healthcheck do Postgres)
+- `.env.example` na raiz lista todas as variáveis carregadas por `src/laro/config.py`
 - Removido o `postgres/docker-compose.yml` genérico antigo (substituído pelo serviço `db`); o `docker.env` original deu lugar ao `.env` da raiz
 
 ## Mapa exibido como código kRO (navi)
 
 A tabela de rastreio (e o select de desambiguação) mostra o **código kRO do mapa** (navi, ex.: `gon_dun03`) em vez do nome em português — é o código que URLs de navegação (`/navi gon_dun03`) entendem. Decisões:
 
-- Nova coluna `navi text` em `mvp` (schema completo em `sql/yellowtracker.sql` e migração `ADD COLUMN IF NOT EXISTS` no seed de upgrade), populada para os 64 MVPs do LATAM (pesquisa cruzada RMS renewal/kRO + rAthena + divine-pride/RagnaPlace; fontes por entrada em `docs/mvp-latam.md`)
+- Nova coluna `navi text` em `mvp` (schema completo em `sql/laro.sql` e migração `ADD COLUMN IF NOT EXISTS` no seed de upgrade), populada para os 64 MVPs do LATAM (pesquisa cruzada RMS renewal/kRO + rAthena + divine-pride/RagnaPlace; fontes por entrada em `docs/mvp-latam.md`)
 - `Mvp.navi` + property `display_map` (navi com fallback para o nome pt): um único ponto de troca em `channel_service`/`entry_service`
 - Nome em português continua no banco, no autocomplete e nas respostas do `/track`; só a exibição do mapa muda
 
@@ -92,6 +92,10 @@ Quando o `r1` (início da janela de respawn) de um MVP rastreado cruza 0, o time
 
 Comandos de configuração (`!timezone`, `!unsettimezone`, `!setmvpchannel`, `!unsetmvpchannel`, `!setpingrole`, `!unsetpingrole`, `!clean`) exigem a permissão **Gerenciar Servidor** (checagem `guild_permissions.manage_guild` no `_dispatch_cmd`). Motivo: sem o gate, qualquer membro podia trocar o canal de track e a role pingada. `!track`, `!woe` e `!settings` (leitura) continuam abertos. Comandos de dono do bot em DM (`!guilds` etc.) já eram restritos.
 
+## Renome do pacote para `laro`
+
+O bot era derivado do Yellow Tracker e herdou o pacote `src/yellowtracker`, o `sql/yellowtracker.sql` e os nomes de log. Para deixar o código com identidade própria: pacote renomeado para `src/laro`, SQL para `sql/laro.sql` e `fly.toml`/`pyproject.toml` para `laro` — apenas renome (nenhum comportamento muda). As referências históricas ao Yellow Tracker de origem ficam nos READMEs/decisões.
+
 ## Monitoramento para o deploy (VM Oracle)
 
 Camadas, do mais interno ao mais externo (ver `docs/hosting-oracle.md`):
@@ -103,4 +107,4 @@ Camadas, do mais interno ao mais externo (ver `docs/hosting-oracle.md`):
 ## Pendências (não bloqueiam o repo)
 
 1. ~~`.env` real (token do bot + `DATABASE_URL`) para smoke test com Discord + Postgres~~ **Feito**: bot conectou via Docker (`docker compose up -d`), sincronizou slash commands e subiu o pool do Postgres (22/11/2026).
-2. ~~Validação do SQL num Postgres de verdade~~ **Feito**: o Postgres do Docker aplicou `sql/yellowtracker.sql` + `sql/seed_mvp_latam.sql` na primeira subida; `SELECT count(*) FROM mvp` = 64 (22/11/2026). A validação estática continua disponível via `scripts/validate_sql.py`.
+2. ~~Validação do SQL num Postgres de verdade~~ **Feito**: o Postgres do Docker aplicou `sql/laro.sql` + `sql/seed_mvp_latam.sql` na primeira subida; `SELECT count(*) FROM mvp` = 64 (22/11/2026). A validação estática continua disponível via `scripts/validate_sql.py`.

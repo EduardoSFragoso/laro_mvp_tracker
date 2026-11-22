@@ -4,7 +4,7 @@ import logging
 
 import discord
 
-from yellowtracker.domain.bot import Bot
+from laro.domain.bot import Bot
 
 
 log = logging.getLogger(__name__)

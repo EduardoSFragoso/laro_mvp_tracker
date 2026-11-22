@@ -1,10 +1,10 @@
-# Yellow Tracker (Ragnarok Online LATAM)
+# Laro MVP Tracker (Ragnarok Online LATAM)
 
 Português | [English](README.en.md)
 
-Yellow Tracker is a Discord bot to track MVPs, adapted for the **Ragnarok Online LATAM** server (the official Gravity/GNJOY LATAM server).
+Laro MVP Tracker is a Discord bot to track MVPs, adapted for the **Ragnarok Online LATAM** server (the official Gravity/GNJOY LATAM server).
 
-Based on the [original yellowtracker](https://github.com/victorgawk/yellowtracker), refactored (dataclasses, env-based settings, module-level services) and with the MVP list, respawn times and events updated for LATAM.
+Based on the [Yellow Tracker original](https://github.com/victorgawk/yellowtracker), refactored (dataclasses, env-based settings, module-level services) and with the MVP list, respawn times and events updated for LATAM.
 
 ## Run locally
 
@@ -14,7 +14,7 @@ Prerequisites:
 - A Discord bot token
 - A PostgreSQL database
 
-1. In the PostgreSQL database, use the content from `sql/yellowtracker.sql` to create the initial database structure (tables + the LATAM MVP list).
+1. In the PostgreSQL database, use the content from `sql/laro.sql` to create the initial database structure (tables + the LATAM MVP list).
 2. Use the root [`.env.example`](.env.example) as a template and create a `.env` file with the following variables:
 ```properties
 # REQUIRED (the bot fails to start without them)

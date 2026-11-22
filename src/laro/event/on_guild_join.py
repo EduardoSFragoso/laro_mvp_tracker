@@ -4,8 +4,8 @@ import logging
 
 import discord
 
-from yellowtracker.domain.bot import Bot
-from yellowtracker.domain.models import GuildState
+from laro.domain.bot import Bot
+from laro.domain.models import GuildState
 
 
 log = logging.getLogger(__name__)

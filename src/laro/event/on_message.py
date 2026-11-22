@@ -4,12 +4,12 @@ import logging
 
 import discord
 
-from yellowtracker.command import clean, settings, timezone, unset_mvp_channel, unsettimezone, woe
-from yellowtracker.command.set_mvp_channel import setmvpchannel_core
-from yellowtracker.command.setpingrole import setpingrole_core, unsetpingrole_core
-from yellowtracker.command.track import track_core
-from yellowtracker.domain.bot import Bot
-from yellowtracker.service import channel_service
+from laro.command import clean, settings, timezone, unset_mvp_channel, unsettimezone, woe
+from laro.command.set_mvp_channel import setmvpchannel_core
+from laro.command.setpingrole import setpingrole_core, unsetpingrole_core
+from laro.command.track import track_core
+from laro.domain.bot import Bot
+from laro.service import channel_service
 
 
 log = logging.getLogger(__name__)
@@ -114,7 +114,7 @@ def _split_track_args(args: list[str]) -> tuple[str | None, str | None]:
 
 
 async def _reply_help(bot: Bot, message: discord.Message) -> None:
-    from yellowtracker.service.channel_service import get_help_description
+    from laro.service.channel_service import get_help_description
 
     embed = discord.Embed(
         colour=discord.Colour.gold(),

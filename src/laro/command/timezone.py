@@ -3,8 +3,8 @@ from __future__ import annotations
 import discord
 import pytz
 
-from yellowtracker.domain.bot import Bot
-from yellowtracker.util.coroutine_util import run_coro
+from laro.domain.bot import Bot
+from laro.util.coroutine_util import run_coro
 
 
 async def timezone_core(bot: Bot, message: discord.Message, timezone: str) -> None:

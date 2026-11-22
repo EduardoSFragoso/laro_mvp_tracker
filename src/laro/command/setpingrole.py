@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import discord
 
-from yellowtracker.domain.bot import Bot
-from yellowtracker.util.coroutine_util import run_coro
+from laro.domain.bot import Bot
+from laro.util.coroutine_util import run_coro
 
 
 async def setpingrole_core(bot: Bot, message: discord.Message) -> None:

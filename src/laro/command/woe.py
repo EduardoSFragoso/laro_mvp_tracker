@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import discord
 
-from yellowtracker.domain.bot import Bot
-from yellowtracker.domain.emoji import Emoji
-from yellowtracker.service import event_service
-from yellowtracker.util.coroutine_util import run_coro
+from laro.domain.bot import Bot
+from laro.domain.emoji import Emoji
+from laro.service import event_service
+from laro.util.coroutine_util import run_coro
 
 
 async def woe_core(bot: Bot, message: discord.Message) -> None:

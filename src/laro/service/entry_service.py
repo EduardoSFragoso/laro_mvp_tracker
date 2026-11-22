@@ -4,10 +4,10 @@ from collections import Counter
 
 import asyncpg
 
-from yellowtracker.domain.bot import Bot
-from yellowtracker.domain.models import EntryLog, Mvp
-from yellowtracker.domain.track_type import TrackType
-from yellowtracker.util import track_util
+from laro.domain.bot import Bot
+from laro.domain.models import EntryLog, Mvp
+from laro.domain.track_type import TrackType
+from laro.util import track_util
 
 
 def find_entry(bot: Bot, query: str) -> list[Mvp]:

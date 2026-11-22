@@ -3,9 +3,9 @@ from __future__ import annotations
 import discord
 from asyncpg.pool import Pool
 
-from yellowtracker.config import Settings
-from yellowtracker.domain.exceptions import PoolNotInitializedError
-from yellowtracker.domain.models import GuildState, Mvp
+from laro.config import Settings
+from laro.domain.exceptions import PoolNotInitializedError
+from laro.domain.models import GuildState, Mvp
 
 
 class Bot(discord.Client):

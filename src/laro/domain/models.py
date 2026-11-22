@@ -6,7 +6,7 @@ from datetime import datetime
 
 import discord
 
-from yellowtracker.domain.track_type import TrackType
+from laro.domain.track_type import TrackType
 
 
 @dataclass

@@ -7,13 +7,13 @@ from datetime import datetime, timedelta
 
 import discord
 
-from yellowtracker.domain.bot import Bot
-from yellowtracker.domain.models import ChannelState, EntryLog
-from yellowtracker.domain.track_type import TrackType
-from yellowtracker.service import entry_service
-from yellowtracker.util import track_util
-from yellowtracker.util.coroutine_util import run_coro
-from yellowtracker.util.date_util import get_dt_now, get_local_tzinfo
+from laro.domain.bot import Bot
+from laro.domain.models import ChannelState, EntryLog
+from laro.domain.track_type import TrackType
+from laro.service import entry_service
+from laro.util import track_util
+from laro.util.coroutine_util import run_coro
+from laro.util.date_util import get_dt_now, get_local_tzinfo
 
 
 log = logging.getLogger(__name__)

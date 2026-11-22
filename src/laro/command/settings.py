@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import discord
 
-from yellowtracker.domain.bot import Bot
-from yellowtracker.domain.emoji import Emoji
-from yellowtracker.domain.track_type import TrackType
-from yellowtracker.service import channel_service
-from yellowtracker.util.coroutine_util import run_coro
+from laro.domain.bot import Bot
+from laro.domain.emoji import Emoji
+from laro.domain.track_type import TrackType
+from laro.service import channel_service
+from laro.util.coroutine_util import run_coro
 
 
 async def settings_core(bot: Bot, message: discord.Message) -> None:

@@ -1,5 +1,5 @@
-from yellowtracker.config import Settings
-from yellowtracker.service import event_service
+from laro.config import Settings
+from laro.service import event_service
 
 
 def stub_bot(timezone='America/Sao_Paulo'):

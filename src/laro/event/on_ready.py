@@ -6,10 +6,10 @@ import os
 import asyncpg
 import discord
 
-from yellowtracker.domain.bot import Bot
-from yellowtracker.domain.models import ChannelState, GuildState, Mvp
-from yellowtracker.domain.track_type import TrackType
-from yellowtracker.service import channel_service, entry_service
+from laro.domain.bot import Bot
+from laro.domain.models import ChannelState, GuildState, Mvp
+from laro.domain.track_type import TrackType
+from laro.service import channel_service, entry_service
 
 
 log = logging.getLogger(__name__)

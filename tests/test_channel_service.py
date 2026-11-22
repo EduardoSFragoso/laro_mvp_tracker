@@ -1,7 +1,7 @@
-from yellowtracker.config import Settings
-from yellowtracker.domain.models import ChannelState
-from yellowtracker.domain.track_type import TrackType
-from yellowtracker.service.channel_service import _multiple_matches_msg, _resolve_query, parse_user_time
+from laro.config import Settings
+from laro.domain.models import ChannelState
+from laro.domain.track_type import TrackType
+from laro.service.channel_service import _multiple_matches_msg, _resolve_query, parse_user_time
 
 
 def test_parse_user_time_rejects_bad_format():

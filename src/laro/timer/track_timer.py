@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import logging
 
-from yellowtracker.domain.bot import Bot
-from yellowtracker.service import channel_service
-from yellowtracker.util import track_util
+from laro.domain.bot import Bot
+from laro.service import channel_service
+from laro.util import track_util
 
 
 log = logging.getLogger(__name__)

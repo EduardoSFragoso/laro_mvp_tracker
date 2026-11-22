@@ -1,5 +1,5 @@
 [project]
-name = "yellowtracker"
+name = "laro"
 version = "1.0.0"
 description = "Discord bot to track MVPs on the Ragnarok Online LATAM server"
 requires-python = ">=3.13"

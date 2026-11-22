@@ -1,4 +1,4 @@
-"""Validação estática do SQL do yellowtracker usando sqlglot (dialeto PostgreSQL).
+"""Validação estática do SQL do laro usando sqlglot (dialeto PostgreSQL).
 
 Verifica:
 - Sintaxe de todo o SQL (schema + seed);
@@ -38,7 +38,7 @@ def lit(e) -> str | None:
 
 
 def main() -> int:
-    for sql_file in ('sql/yellowtracker.sql', 'sql/seed_mvp_latam.sql'):
+    for sql_file in ('sql/laro.sql', 'sql/seed_mvp_latam.sql'):
         text = (ROOT / sql_file).read_text(encoding='utf-8')
         try:
             stmts = [s for s in sqlglot.parse(text, read='postgres') if s is not None]
@@ -92,10 +92,10 @@ def main() -> int:
             in_block = False
     check(bad == 0, f'mvp_alias sempre em bloco após INSERT em mvp (erros: {bad})')
 
-    full = (ROOT / 'sql/yellowtracker.sql').read_text(encoding='utf-8')
+    full = (ROOT / 'sql/laro.sql').read_text(encoding='utf-8')
     stmts_full = [s for s in sqlglot.parse(full, read='postgres') if s is not None]
     tables_full = Counter(s.this.this.name for s in stmts_full if isinstance(s, exp.Insert))  # type: ignore[index,union-attr]
-    print(f'yellowtracker.sql inserts: {dict(tables_full)}')
+    print(f'laro.sql inserts: {dict(tables_full)}')
     check(tables_full.get('mvp') == 64, f'schema+seed: 64 MVPs (obtido {tables_full.get("mvp")})')
     check(tables_full.get('mining') in (0, None), f'schema sem mining (obtido {tables_full.get("mining")})')
 

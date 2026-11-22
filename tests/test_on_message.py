@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from yellowtracker.event.on_message import _split_track_args
+from laro.event.on_message import _split_track_args
 
 
 @pytest.mark.parametrize(
