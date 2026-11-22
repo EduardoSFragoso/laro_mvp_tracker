@@ -4,6 +4,7 @@ import asyncio
 import logging
 
 import discord
+from discord import app_commands
 
 from yellowtracker.command import (
     clean,
@@ -23,6 +24,7 @@ from yellowtracker.event.on_guild_join import on_guild_join as on_guild_join_evt
 from yellowtracker.event.on_guild_remove import on_guild_remove as on_guild_remove_evt
 from yellowtracker.event.on_message import on_message as on_message_evt
 from yellowtracker.event.on_ready import on_ready as on_ready_evt
+from yellowtracker.service import entry_service
 
 
 log = logging.getLogger(__name__)
@@ -91,7 +93,13 @@ async def _settings(interaction: discord.Interaction):
     await settings.settings_cmd(interaction, bot)
 
 
+def _track_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
+    return [discord.app_commands.Choice(name=name, value=name) for name, _map in entry_service.ac_entries(bot, current)]
+
+
 @tree.command(name='track', description='Track a MVP that has been defeated')
+@app_commands.describe(mvp='MVP name (pt-BR) or alias', time='Time of death in HHMM, defaults to now')
+@app_commands.autocomplete(mvp=_track_autocomplete)
 async def _track(interaction: discord.Interaction, mvp: str, time: str = None):
     await track.track(interaction, bot, mvp, time)
 

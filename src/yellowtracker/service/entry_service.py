@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections import Counter
+
 import asyncpg
 
 from yellowtracker.domain.bot import Bot
@@ -37,6 +39,29 @@ def _entry_exact_match(entry: Mvp, query: str) -> bool:
 def _entry_matches(entry: Mvp, query: str) -> bool:
     query_lower = query.lower()
     return any(c.lower().startswith(query_lower) for c in _entry_compare(entry))
+
+
+def ac_entries(bot: Bot, query: str) -> list[tuple[str, str]]:
+    """Autocomplete entries for the /track command, as (label, value) pairs.
+
+    Same prefix semantics as find_entry. When two MVPs share a name (same
+    name, different maps), the map disambiguates both the label and the
+    value, mirroring find_entry's 'name map' exact-match syntax. At most
+    the 25 options the Discord autocomplete allows.
+    """
+    if not query:
+        return []
+    matched = [entry for entry in bot.mvp_list if _entry_matches(entry, query)]
+    name_counts = Counter(entry.name.lower() for entry in matched)
+    results: list[tuple[str, str]] = []
+    for entry in matched:
+        if name_counts[entry.name.lower()] > 1:
+            results.append((f'{entry.name} ({entry.map})', f'{entry.name} {entry.map}'))
+        else:
+            results.append((entry.name, entry.name))
+        if len(results) == 25:
+            break
+    return results
 
 
 async def load_db_entries(bot: Bot, conn: asyncpg.Connection) -> None:

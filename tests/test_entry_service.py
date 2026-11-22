@@ -1,5 +1,5 @@
 from yellowtracker.domain.models import Mvp
-from yellowtracker.service.entry_service import find_entry
+from yellowtracker.service.entry_service import ac_entries, find_entry
 
 
 class StubBot:
@@ -67,3 +67,25 @@ def test_case_insensitive():
 def test_no_match_returns_empty():
     bot = make_bot(MVP_LIST)
     assert find_entry(bot, 'poring') == []
+
+
+def test_ac_entries_empty_query_returns_none():
+    bot = make_bot(MVP_LIST)
+    assert ac_entries(bot, '') == []
+
+
+def test_ac_entries_prefix_includes_alias_and_name():
+    bot = make_bot(MVP_LIST)
+    names = [name for name, _map in ac_entries(bot, 'am')]
+    assert names == ['Amon Ra', 'Amon Ra do Pesadelo']
+    names = [name for name, _map in ac_entries(bot, 'baphomet')]
+    assert names == ['Bafomé']
+
+
+def test_ac_entries_deduplicates_by_name_with_map_hint():
+    bot = make_bot(MVP_LIST)
+    entries = ac_entries(bot, 'atroce')
+    assert len(entries) == 2
+    assert {label for label, _value in entries} == {'Atroce (Planície de Ida)', 'Atroce (Pradaria Audhumbla)'}
+    values = {value for _label, value in entries}
+    assert {find_entry(bot, v)[0].id for v in values} == {4, 5}
