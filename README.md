@@ -49,6 +49,7 @@ psql "$DATABASE_URL" -f sql/seed_mvp_latam.sql
 - **Lista de MVPs**: 64 entradas com nomes e mapas em português e janelas de respawn conforme o rastreador da comunidade (meurag.com/ferramentas/mvps). Detalhes e fontes em `docs/mvp-latam.md`.
 - **Timezone padrão**: `America/Sao_Paulo` (horário de Brasília), igual ao horário do servidor (UTC-3).
 - **MVPs sem ID**: alguns MVPs novos não têm `id_mob` no banco (usado só para a miniatura da pré-visualização); o thumbnail é omitido nesses casos.
+- Histórico completo das decisões do refactor: [docs/decisoes.md](docs/decisoes.md).
 
 ## Como usar
 

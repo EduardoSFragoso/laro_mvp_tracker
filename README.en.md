@@ -49,6 +49,7 @@ psql "$DATABASE_URL" -f sql/seed_mvp_latam.sql
 - **MVP list**: 64 entries with names and maps in Portuguese and respawn windows matching the LATAM community tracker (meurag.com/ferramentas/mvps). Details and sources in `docs/mvp-latam.md`.
 - **Default timezone**: `America/Sao_Paulo` (Brasília time), same as the server time (UTC-3).
 - **MVPs without an ID**: some of the new MVPs have a NULL `id_mob` in the database (it is only used for the preview thumbnail); the thumbnail is omitted in those cases.
+- Full history of the refactor decisions (in Portuguese): [docs/decisoes.md](docs/decisoes.md).
 
 ## Usage
 
