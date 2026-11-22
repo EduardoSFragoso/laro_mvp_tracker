@@ -79,6 +79,14 @@ Os comandos do bot deixaram de ser slash commands e passaram a ser **mensagens c
 - **Mensagem fixa de instruções**: canal de track agora tem, antes da tabela, um embed "📖 Como usar" persistente (`ChannelState.id_help_message`), recriado/reordenado automaticamente pelo `init_channel` e protegido da rotina de limpeza
 - Trade-off aceito: sair do slash remove o autocomplete do client; a ambiguidade de nomes continua resolvida pelo select (TrackView)
 
+## Notificação de janela de respawn
+
+Quando o `r1` (início da janela de respawn) de um MVP rastreado cruza 0, o timer do bot manda uma mensagem no canal de track com **@here** e o horário aproximado de fechamento da janela (`r2`). Detalhes:
+
+- Flag `TrackEntryState.notified` evita reenviar; o re-rastreio do mesmo MVP a reseta (`track_util.track_entry`)
+- Dispara só na transição (`r1` em {0, -1}), então um MVP rastreado tarde não dispara ping atrasado nem na inicialização
+- Sem comando para desligar (canal dedicado a track, ping é o propósito); `allowed_mentions` libera apenas o `everyone` necessário para o `@here`
+
 ## Pendências (não bloqueiam o repo)
 
 1. ~~`.env` real (token do bot + `DATABASE_URL`) para smoke test com Discord + Postgres~~ **Feito**: bot conectou via Docker (`docker compose up -d`), sincronizou slash commands e subiu o pool do Postgres (22/11/2026).

@@ -68,8 +68,10 @@ Defina um canal do seu servidor do Discord para ser usado exclusivamente no rast
   - **ATENÇÃO**: ao usar esse comando, **TODAS** as mensagens do canal (se houver) serão apagadas de forma irreversível! Escolha o canal certo.
 
 Dentro de um canal de MVPs, há duas formas de rastrear:
-- digitando **!track NOME_DE_MVP** ou **!track NOME_DE_MVP HHMM** (requer permissão **Message Content**; aceita nome em português ou apelido em inglês — ex.: `!track amon ra 1234`, `!track atroce`, `!track brinaranea 1512`);
+- digitando **!track NOME_DE_MVP** (sem horário = morreu agora) ou **!track NOME_DE_MVP HHMM** (requer permissão **Message Content**; aceita nome em português ou apelido em inglês — ex.: `!track amon ra 1234`, `!track atroce`, `!track brinaranea 1512`);
 - pressionando o botão **➕ TRACK MVP** (abre um formulário no Discord).
+
+Quando a janela de respawn de um MVP abrir (início do tempo mínimo de respawn), o bot avisa no canal de track com **@here** e mostra até que horário a janela fica aberta.
 
 Os comandos são **mensagens com prefixo** (padrão `!`, configurável em `COMMAND_PREFIX`) — em vez de slash commands — para não aparecer misturados aos comandos de outros bots na lista `/`. A tabela exibe o **código kRO do mapa** (navi, ex.: `gon_dun03`) em vez do nome em português. Só mensagens que começam com o prefixo são processadas; as demais são apagadas automaticamente pela rotina de limpeza do canal (requer permissão **Manage Messages**).
 

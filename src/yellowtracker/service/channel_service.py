@@ -245,6 +245,35 @@ def _fmt_track_reply(entry_state, user_time: str) -> str:
 
 
 # --------------------------------------------------------------------------
+# Window-open notification
+# --------------------------------------------------------------------------
+
+
+async def notify_entries(bot: Bot, channel_state: ChannelState, entry_states: list) -> None:
+    """Announce MVPs whose respawn window just opened (r1 <= 0) in the track channel."""
+    guild_state = bot.get_guild_state(channel_state.id_guild)
+    if guild_state is None:
+        return
+    timezone = guild_state.timezone or bot.settings.timezone
+    now = get_dt_now(timezone)
+    for entry_state in entry_states:
+        entry_state.notified = True
+    lines = []
+    for entry_state in entry_states:
+        end = (now + timedelta(minutes=int(entry_state.r2))).strftime('%H:%M')
+        lines.append(
+            '- **' + entry_state.entry.name + '** (' + entry_state.entry.display_map + ') — janela aberta até ~' + end
+        )
+    content = '@here :bell: **MVPs na janela de respawn:**\n' + '\n'.join(lines)
+    channel = get_channel_from_bot(bot, channel_state.id_guild, channel_state.id_channel)
+    if channel is None:
+        return
+    if validate_channel(bot, channel) is not None:
+        return
+    await run_coro(channel.send(content, allowed_mentions=discord.AllowedMentions(everyone=True)))
+
+
+# --------------------------------------------------------------------------
 # Channel lifecycle
 # --------------------------------------------------------------------------
 
@@ -296,7 +325,8 @@ def get_help_description(prefix: str) -> str:
         f'> `{p}track <nome> [horário da morte HHMM]`\n'
         '\n'
         '**Exemplos:**\n'
-        f'> `{p}track Serpente Suprema 20:35`\n'
+        f'> `{p}track Serpente Suprema` — sem horário = morreu agora\n'
+        f'> `{p}track Serpente Suprema 20:35` — morreu às 20:35\n'
         f'> `{p}track` — mostra todos os comandos\n'
         '\n'
         '**Outros comandos:**\n'
@@ -304,6 +334,8 @@ def get_help_description(prefix: str) -> str:
         f'- `{p}woe` — horários da WoE\n'
         f'- `{p}clean` — limpa o canal\n'
         f'- `{p}setmvpchannel` / `{p}unsetmvpchannel` — canal de notificação\n'
+        '\n'
+        ':bell: Quando a janela de respawn de um MVP abrir, o bot avisa aqui com **@here**.\n'
         '\n'
         f':warning: Só mensagens que começam com `{p}` são processadas. '
         'As demais são apagadas automaticamente.'
