@@ -5,11 +5,28 @@ import logging
 
 import discord
 
-from yellowtracker.command import clean, custom, gmc, hh, mobile, settings, \
-    set_mvp_channel, timezone, track, unset_mvp_channel, unsettimezone, woe
+from yellowtracker.command import (
+    clean,
+    custom,
+    gmc,
+    hh,
+    mobile,
+    set_mvp_channel,
+    settings,
+    track,
+    unset_mvp_channel,
+    unsettimezone,
+    woe,
+)
+from yellowtracker.command.timezone import timezone_cmd
 from yellowtracker.config import load_settings
 from yellowtracker.domain.bot import Bot
-from yellowtracker.event import on_guild_join, on_guild_remove, on_message, on_ready
+from yellowtracker.domain.exceptions import BotConfigurationError
+from yellowtracker.event.on_guild_join import on_guild_join as on_guild_join_evt
+from yellowtracker.event.on_guild_remove import on_guild_remove as on_guild_remove_evt
+from yellowtracker.event.on_message import on_message as on_message_evt
+from yellowtracker.event.on_ready import on_ready as on_ready_evt
+
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +52,7 @@ async def _custom(interaction: discord.Interaction):
 
 @tree.command(name='timezone', description='Define a custom timezone for MVP tracking')
 async def _timezone(interaction: discord.Interaction, timezone: str):
-    await timezone.timezone_cmd(interaction, bot, timezone)
+    await timezone_cmd(interaction, bot, timezone)
 
 
 @tree.command(name='unsettimezone', description='Undo custom timezone definition')
@@ -85,34 +102,35 @@ async def _hh(interaction: discord.Interaction):
 
 @bot.event
 async def on_ready():
-    await on_ready.on_ready(bot, tree)
+    await on_ready_evt(bot, tree)
 
 
 @bot.event
 async def on_message(message: discord.Message):
-    await on_message.on_message(bot, tree, message)
+    await on_message_evt(bot, tree, message)
 
 
 @bot.event
 async def on_guild_join(guild):
-    await on_guild_join.on_guild_join(guild, tree, bot)
+    await on_guild_join_evt(guild, tree, bot)
 
 
 @bot.event
 async def on_guild_remove(guild):
-    await on_guild_remove.on_guild_remove(guild, bot)
+    await on_guild_remove_evt(guild, bot)
 
 
 async def _run_bot(bot: Bot) -> None:
     log.info('Start bot client.')
     if bot.settings.bot_user_token is None:
-        raise Exception('Bot token is missing')
+        raise BotConfigurationError('Bot token is missing')
     await bot.start(bot.settings.bot_user_token)
 
 
 async def _run_timer(bot: Bot) -> None:
     log.info('Start timer.')
     from yellowtracker.timer import event_timer, track_timer
+
     while True:
         await event_timer.EventTimer.timer(bot)
         await track_timer.TrackTimer.timer(bot)

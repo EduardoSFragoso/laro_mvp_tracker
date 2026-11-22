@@ -2,18 +2,15 @@ from __future__ import annotations
 
 import logging
 
-import discord
 from yellowtracker.domain.bot import Bot
-from yellowtracker.domain.models import ChannelState
-from yellowtracker.domain.track_type import TrackType
 from yellowtracker.service import channel_service
 from yellowtracker.util import track_util
+
 
 log = logging.getLogger(__name__)
 
 
 class TrackTimer:
-
     @staticmethod
     async def timer(bot: Bot):
         if not bot.tracker_ready:
@@ -26,8 +23,7 @@ class TrackTimer:
                 update_needed = len(channel_state.entry_states) > 0
                 if update_needed:
                     for entry_state in channel_state.entry_states:
-                        track_util.calc_remaining_time(
-                            entry_state, entry_state.track_time, channel_state.type)
+                        track_util.calc_remaining_time(entry_state, entry_state.track_time, channel_state.type)
                     await channel_service.update_channel_message(bot, channel_state)
                 channel = channel_service.get_channel_from_guild(guild, channel_state.id_channel)
                 if channel is None:

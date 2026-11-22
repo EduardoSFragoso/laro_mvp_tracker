@@ -1,7 +1,7 @@
 from enum import Enum
 
-class TrackType(Enum):
 
+class TrackType(Enum):
     MVP = (1, 'MVP', 'mvp')
 
     def __init__(self, id: int, desc: str, sql_desc: str):

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
+
 DEFAULT_TIMEZONE = 'America/Sao_Paulo'
 
 

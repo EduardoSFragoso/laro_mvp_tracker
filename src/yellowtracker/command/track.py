@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import discord
+
 from yellowtracker.domain.bot import Bot
-from yellowtracker.domain.models import ChannelState
 from yellowtracker.service import channel_service
 from yellowtracker.util.coroutine_util import run_coro
 

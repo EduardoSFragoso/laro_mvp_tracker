@@ -1,0 +1,20 @@
+[project]
+name = "yellowtracker"
+version = "1.0.0"
+description = "Discord bot to track MVPs on the Ragnarok Online LATAM server"
+requires-python = ">=3.13"
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.format]
+# o projeto já usa aspas simples em todo o código
+quote-style = "single"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "C4", "SIM"]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2

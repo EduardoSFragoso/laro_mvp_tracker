@@ -5,8 +5,7 @@ from datetime import datetime
 from yellowtracker.domain.models import ChannelState, Mvp, TrackEntryState
 
 
-def track_entry(channel_state: ChannelState, entry: Mvp, track_time: datetime,
-                custom: bool = False) -> TrackEntryState:
+def track_entry(channel_state: ChannelState, entry: Mvp, track_time: datetime, custom: bool = False) -> TrackEntryState:
     """Register (or update) a tracked MVP in a channel and return its state."""
     entry_state = next(
         (x for x in channel_state.entry_states if x.entry is entry),

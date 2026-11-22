@@ -13,8 +13,14 @@ def make_bot(mvp_list):
 
 MVP_LIST = [
     Mvp(id=1, name='Amon Ra', map='Subsolo da Pirâmide (2)', t1=60, t2=70, alias=['amon']),
-    Mvp(id=2, name='Amon Ra do Pesadelo', map='Subsolo da Pirâmide (2) - Pesadelo',
-        t1=60, t2=70, alias=['Nightmare Amon Ra']),
+    Mvp(
+        id=2,
+        name='Amon Ra do Pesadelo',
+        map='Subsolo da Pirâmide (2) - Pesadelo',
+        t1=60,
+        t2=70,
+        alias=['Nightmare Amon Ra'],
+    ),
     Mvp(id=3, name='Bafomé', map='Labirinto da Floresta (3)', t1=120, t2=130, alias=['Baphomet']),
     Mvp(id=4, name='Atroce', map='Planície de Ida', t1=180, t2=190, alias=['Atroce Ida']),
     Mvp(id=5, name='Atroce', map='Pradaria Audhumbla', t1=300, t2=310, alias=['Atroce Audhumbla']),

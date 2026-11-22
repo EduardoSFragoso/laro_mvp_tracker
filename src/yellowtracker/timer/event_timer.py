@@ -4,11 +4,13 @@ import logging
 from datetime import timedelta
 
 import discord
+
 from yellowtracker.domain.bot import Bot
 from yellowtracker.domain.emoji import Emoji
 from yellowtracker.service import event_service
 from yellowtracker.util.coroutine_util import run_coro
 from yellowtracker.util.date_util import fmt_time_short, get_dt_now
+
 
 log = logging.getLogger(__name__)
 
@@ -18,7 +20,6 @@ EVENT_TIMER_TYPES = ['woe']
 
 
 class EventTimer:
-
     idx = 0
 
     @staticmethod
@@ -28,8 +29,7 @@ class EventTimer:
         if bot.ws is None:
             return
         dt_now = get_dt_now(bot.settings.timezone)
-        evt, ongoing = event_service.get_next_evt(
-            bot, EVENT_TIMER_TYPES[EventTimer.idx % len(EVENT_TIMER_TYPES)])
+        evt, ongoing = event_service.get_next_evt(bot, EVENT_TIMER_TYPES[EventTimer.idx % len(EVENT_TIMER_TYPES)])
         if evt is None:
             return
         msg = EventTimer.get_msg_prefix(evt)

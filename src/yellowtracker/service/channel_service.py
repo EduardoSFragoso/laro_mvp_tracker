@@ -14,6 +14,7 @@ from yellowtracker.util import track_util
 from yellowtracker.util.coroutine_util import run_coro
 from yellowtracker.util.date_util import get_dt_now, get_local_tzinfo
 
+
 log = logging.getLogger(__name__)
 
 TABLE_MAX_ROWS = 20
@@ -78,8 +79,9 @@ def parse_user_time(timezone: str, user_time: str) -> datetime | str:
     return track_time.replace(hour=hh, minute=mm)
 
 
-def _resolve_query(bot: Bot, guild_state, channel_state: ChannelState,
-                   mvp: str, user_time: str) -> tuple[list, int, str | None]:
+def _resolve_query(
+    bot: Bot, guild_state, channel_state: ChannelState, mvp: str, user_time: str
+) -> tuple[list, int, str | None]:
     """Resolve ``mvp``/``user_time`` into (results, mins_ago, error)."""
     mins_ago = 0
     if user_time is not None:
@@ -96,43 +98,50 @@ def _resolve_query(bot: Bot, guild_state, channel_state: ChannelState,
 # Tracking entry points
 # --------------------------------------------------------------------------
 
-async def track_by_message(bot: Bot, message: discord.Message, channel_state: ChannelState,
-                           mvp: str, user_time: str) -> None:
+
+async def track_by_message(
+    bot: Bot, message: discord.Message, channel_state: ChannelState, mvp: str, user_time: str
+) -> None:
     guild_state = bot.guild_states[message.channel.guild.id]
     results, mins_ago, error = _resolve_query(bot, guild_state, channel_state, mvp, user_time)
     if error is not None:
         await run_coro(message.channel.send(error))
         return
-    await _dispatch_track(bot, channel_state, results, mins_ago, user_time,
-                          message.author.id, mvp, MessageSender(message.channel))
+    await _dispatch_track(
+        bot, channel_state, results, mins_ago, user_time, message.author.id, mvp, MessageSender(message.channel)
+    )
 
 
-async def track_by_interaction(bot: Bot, interaction: discord.Interaction,
-                               channel_state: ChannelState, mvp: str, user_time: str) -> None:
+async def track_by_interaction(
+    bot: Bot, interaction: discord.Interaction, channel_state: ChannelState, mvp: str, user_time: str
+) -> None:
     guild_state = bot.guild_states[interaction.channel.guild.id]
     results, mins_ago, error = _resolve_query(bot, guild_state, channel_state, mvp, user_time)
     if error is not None:
         await run_coro(interaction.response.send_message(error))
         return
-    await _dispatch_track(bot, channel_state, results, mins_ago, user_time,
-                          interaction.user.id, mvp, InteractionSender(interaction))
+    await _dispatch_track(
+        bot, channel_state, results, mins_ago, user_time, interaction.user.id, mvp, InteractionSender(interaction)
+    )
 
 
-async def _dispatch_track(bot: Bot, channel_state: ChannelState, results: list,
-                          mins_ago: int, user_time: str, id_user: int, mvp: str, sender) -> None:
+async def _dispatch_track(
+    bot: Bot, channel_state: ChannelState, results: list, mins_ago: int, user_time: str, id_user: int, mvp: str, sender
+) -> None:
     type = channel_state.type
     if len(results) == 0:
         await run_coro(sender.send(f'{type.desc} "{mvp}" not found.'))
     elif len(results) == 1:
-        bot_reply_msg = await update_track_time(
-            bot, channel_state, results[0], mins_ago, user_time, id_user)
+        bot_reply_msg = await update_track_time(bot, channel_state, results[0], mins_ago, user_time, id_user)
         await run_coro(sender.send(bot_reply_msg))
     else:
         msg = _multiple_matches_msg(type, mvp, user_time)
-        await run_coro(sender.send(
-            msg,
-            view=TrackView(bot=bot, opts=results, mins_ago=mins_ago, user_time=user_time),
-        ))
+        await run_coro(
+            sender.send(
+                msg,
+                view=TrackView(bot=bot, opts=results, mins_ago=mins_ago, user_time=user_time),
+            )
+        )
 
 
 def _multiple_matches_msg(type: TrackType, query: str, user_time: str) -> str:
@@ -170,8 +179,10 @@ class InteractionSender:
 # Track update
 # --------------------------------------------------------------------------
 
-async def update_track_time(bot: Bot, channel_state: ChannelState, entry,
-                            mins_ago: int, user_time: str, id_user: int) -> str:
+
+async def update_track_time(
+    bot: Bot, channel_state: ChannelState, entry, mins_ago: int, user_time: str, id_user: int
+) -> str:
     type = channel_state.type
     row_sql = type.sql_desc
     date = datetime.now()
@@ -207,7 +218,8 @@ async def update_track_time(bot: Bot, channel_state: ChannelState, entry,
         await bot.pool_release(conn)
 
     entry_state = track_util.track_entry(
-        channel_state, entry, track_time, custom=bot.get_guild_state(channel_state.id_guild).custom)
+        channel_state, entry, track_time, custom=bot.get_guild_state(channel_state.id_guild).custom
+    )
     await update_channel_message(bot, channel_state)
     return _fmt_track_reply(entry_state, user_time)
 
@@ -230,6 +242,7 @@ def _fmt_track_reply(entry_state, user_time: str) -> str:
 # Channel lifecycle
 # --------------------------------------------------------------------------
 
+
 async def init_channel(bot: Bot, channel_state: ChannelState) -> None:
     channel = get_channel_from_bot(bot, channel_state.id_guild, channel_state.id_channel)
     if channel is None:
@@ -238,8 +251,7 @@ async def init_channel(bot: Bot, channel_state: ChannelState) -> None:
         return
     channel_state.id_message = None
     async for msg in channel.history():
-        if msg.type == discord.MessageType.default and msg.author == bot.user \
-                and channel_state.id_message is None:
+        if msg.type == discord.MessageType.default and msg.author == bot.user and channel_state.id_message is None:
             channel_state.id_message = msg.id
             await update_channel_message(bot, channel_state)
             break
@@ -261,9 +273,7 @@ def is_msg_can_be_deleted(bot: Bot, channel_state: ChannelState, msg: discord.Me
     if datetime.utcnow() - msg.created_at.replace(tzinfo=None) >= timedelta(days=14):
         return False
     msg_date = msg.created_at if msg.edited_at is None else msg.edited_at
-    if datetime.utcnow() - msg_date.replace(tzinfo=None) <= timedelta(seconds=bot.settings.del_msg_after_secs):
-        return False
-    return True
+    return datetime.utcnow() - msg_date.replace(tzinfo=None) > timedelta(seconds=bot.settings.del_msg_after_secs)
 
 
 async def set_channel(bot: Bot, channel: discord.TextChannel, type: TrackType) -> None:
@@ -312,15 +322,18 @@ async def confirm_set_channel(bot: Bot, interaction: discord.Interaction, trackT
     if validate_msg is not None:
         await run_coro(interaction.response.send_message(validate_msg))
         return
-    await run_coro(interaction.response.send_message(
-        'This will remove all messages from this channel. Are you sure?',
-        view=SetChannelView(bot=bot, trackType=trackType),
-    ))
+    await run_coro(
+        interaction.response.send_message(
+            'This will remove all messages from this channel. Are you sure?',
+            view=SetChannelView(bot=bot, trackType=trackType),
+        )
+    )
 
 
 # --------------------------------------------------------------------------
 # Track table message
 # --------------------------------------------------------------------------
+
 
 async def update_channel_message(bot: Bot, channel_state: ChannelState) -> None:
     local_tz = get_local_tzinfo()
@@ -346,8 +359,7 @@ async def update_channel_message(bot: Bot, channel_state: ChannelState) -> None:
             remaining_time += ' to ' + track_util.fmt_r1_r2(int(entry_state.r2))
             remaining_time += ' mins'
             if mobile:
-                names.append(entry_state.entry.name + ' (' + entry_state.entry.map + ')'
-                             + ' | ' + remaining_time)
+                names.append(entry_state.entry.name + ' (' + entry_state.entry.map + ')' + ' | ' + remaining_time)
             else:
                 names.append(entry_state.entry.name)
                 maps.append(entry_state.entry.map)
@@ -389,7 +401,7 @@ async def update_channel_message(bot: Bot, channel_state: ChannelState) -> None:
         for entry_log in channel_state.entry_logs:
             if result != '':
                 result += '\n'
-            result += f"[<t:{int(time.mktime(entry_log.date.astimezone(tz=local_tz).timetuple()))}:R>]"
+            result += f'[<t:{int(time.mktime(entry_log.date.astimezone(tz=local_tz).timetuple()))}:R>]'
             result += ' ' + entry_log.entry.name
             result += ' (' + entry_log.entry.map + ')'
             result += ' by <@' + str(entry_log.id_user) + '>'
@@ -409,7 +421,7 @@ async def update_channel_message(bot: Bot, channel_state: ChannelState) -> None:
             message = await channel.fetch_message(channel_state.id_message)
         except discord.errors.NotFound:
             pass
-        except Exception:
+        except discord.DiscordException:
             log.error('Unexpected error fetching track message.', exc_info=True)
             return
     view = ChannelMessageView(bot=bot, channel_state=channel_state)
@@ -425,6 +437,7 @@ async def update_channel_message(bot: Bot, channel_state: ChannelState) -> None:
 # --------------------------------------------------------------------------
 # UI components (views/buttons/selects/modals)
 # --------------------------------------------------------------------------
+
 
 class SetChannelView(discord.ui.View):
     def __init__(self, *, timeout=180, bot: Bot, trackType: TrackType):
@@ -464,10 +477,7 @@ class TrackSelect(discord.ui.Select):
         self.opts = opts
         self.mins_ago = mins_ago
         self.user_time = user_time
-        options = [
-            discord.SelectOption(label=opt.name, description=opt.map, value=str(opt.id))
-            for opt in self.opts
-        ]
+        options = [discord.SelectOption(label=opt.name, description=opt.map, value=str(opt.id)) for opt in self.opts]
         super().__init__(placeholder='Select an option', options=options)
 
     async def callback(self, interaction: discord.Interaction):
@@ -477,7 +487,8 @@ class TrackSelect(discord.ui.Select):
             return
         channel_state = guild_state.channel_states.get(interaction.channel_id)
         bot_reply_msg = await update_track_time(
-            self.bot, channel_state, entry, self.mins_ago, self.user_time, interaction.user.id)
+            self.bot, channel_state, entry, self.mins_ago, self.user_time, interaction.user.id
+        )
         await run_coro(interaction.response.edit_message(content=bot_reply_msg, view=None))
 
 
@@ -491,12 +502,10 @@ class ChannelMessageTrackButton(discord.ui.Button):
     def __init__(self, bot: Bot, channel_state: ChannelState):
         self.bot = bot
         self.channel_state = channel_state
-        super().__init__(style=discord.ButtonStyle.primary, emoji='➕',
-                         label=f'TRACK {channel_state.type.desc}')
+        super().__init__(style=discord.ButtonStyle.primary, emoji='➕', label=f'TRACK {channel_state.type.desc}')
 
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_modal(
-            ChannelMessageTrackModal(bot=self.bot, channel_state=self.channel_state))
+        await interaction.response.send_modal(ChannelMessageTrackModal(bot=self.bot, channel_state=self.channel_state))
 
 
 class ChannelMessageTrackModal(discord.ui.Modal):
@@ -515,5 +524,4 @@ class ChannelMessageTrackModal(discord.ui.Modal):
             user_time = self.time_input.value.strip()
             if len(user_time) == 0:
                 user_time = None
-            await track_by_interaction(
-                self.bot, interaction, self.channel_state, name, user_time)
+            await track_by_interaction(self.bot, interaction, self.channel_state, name, user_time)

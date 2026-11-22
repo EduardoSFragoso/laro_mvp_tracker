@@ -4,6 +4,7 @@ import discord
 from asyncpg.pool import Pool
 
 from yellowtracker.config import Settings
+from yellowtracker.domain.exceptions import PoolNotInitializedError
 from yellowtracker.domain.models import GuildState, Mvp
 
 
@@ -23,10 +24,10 @@ class Bot(discord.Client):
 
     async def pool_acquire(self):
         if self.pool is None:
-            raise Exception('Pool is None')
+            raise PoolNotInitializedError('Pool is None')
         return await self.pool.acquire()
 
     async def pool_release(self, conn):
         if self.pool is None:
-            raise Exception('Pool is None')
+            raise PoolNotInitializedError('Pool is None')
         return await self.pool.release(conn)

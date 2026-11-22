@@ -1,7 +1,5 @@
-import discord
-
 from yellowtracker.config import Settings
-from yellowtracker.domain.models import ChannelState, GuildState, Mvp
+from yellowtracker.domain.models import ChannelState
 from yellowtracker.domain.track_type import TrackType
 from yellowtracker.service.channel_service import _multiple_matches_msg, _resolve_query, parse_user_time
 
@@ -19,6 +17,7 @@ def test_parse_user_time_rejects_out_of_range():
 
 def test_parse_user_time_returns_datetime():
     from datetime import datetime, timedelta
+
     result = parse_user_time('America/Sao_Paulo', '2359')
     assert isinstance(result, datetime)
     # track time must always be in the past (max 24h)
@@ -45,10 +44,13 @@ def make_bot(mvp_list):
 
 def test_resolve_query_invalid_time_returns_error():
     import types
+
     class BotStub:
         settings = Settings(bot_user_token=None, database_url=None)
+
     channel_state = ChannelState(id_channel=1, id_guild=10, type=TrackType.MVP)
     results, mins_ago, error = _resolve_query(
-        BotStub(), types.SimpleNamespace(timezone=None), channel_state, 'bafomé', '99x9')
+        BotStub(), types.SimpleNamespace(timezone=None), channel_state, 'bafomé', '99x9'
+    )
     assert results == [] and mins_ago == 0
     assert error == 'HHMM format expected for user time'

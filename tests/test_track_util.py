@@ -1,7 +1,5 @@
 from datetime import datetime, timedelta
 
-import pytest
-
 from yellowtracker.domain.models import ChannelState, Mvp, TrackEntryState
 from yellowtracker.domain.track_type import TrackType
 from yellowtracker.util import track_util
@@ -11,9 +9,14 @@ def make_mvp_channel(mobile=False):
     return ChannelState(id_channel=1, id_guild=100, type=TrackType.MVP)
 
 
-
 def make_mvp(**overrides):
-    data = dict(id=1, name='Amon Ra', map='Subsolo da Pirâmide (2)', t1=60, t2=70)
+    data = {
+        'id': 1,
+        'name': 'Amon Ra',
+        'map': 'Subsolo da Pirâmide (2)',
+        't1': 60,
+        't2': 70,
+    }
     data.update(overrides)
     return Mvp(**data)
 
@@ -57,7 +60,6 @@ def test_track_entry_custom_ignored_when_null():
     assert entry_state.t1 == 60
     assert entry_state.t2 == 70
     assert entry_state.r1 in (59, 60)
-
 
 
 def test_track_entry_reuse_existing_state():

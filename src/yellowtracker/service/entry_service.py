@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import asyncpg
+
 from yellowtracker.domain.bot import Bot
-from yellowtracker.domain.models import EntryLog, Mvp, TrackEntryState
+from yellowtracker.domain.models import EntryLog, Mvp
 from yellowtracker.domain.track_type import TrackType
 from yellowtracker.util import track_util
 
@@ -82,14 +83,10 @@ async def _load_db_entries_log(bot: Bot, conn: asyncpg.Connection) -> None:
                 (x for x in channel_state.entry_states if x.entry is entry),
                 None,
             )
-            if entry_state is not None:
-                if entry_state.r2 <= -bot.settings.table_entry_expiration_mins:
-                    delete_sql = (
-                        'DELETE FROM mvp_guild '
-                        'WHERE id_guild=$1 AND id_mvp=$2'
-                    )
-                    await conn.execute(
-                        delete_sql,
-                        db_entry_log['id_guild'],
-                        db_entry_log['id_mvp'],
-                    )
+            if entry_state is not None and entry_state.r2 <= -bot.settings.table_entry_expiration_mins:
+                delete_sql = 'DELETE FROM mvp_guild WHERE id_guild=$1 AND id_mvp=$2'
+                await conn.execute(
+                    delete_sql,
+                    db_entry_log['id_guild'],
+                    db_entry_log['id_mvp'],
+                )

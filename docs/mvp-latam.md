@@ -68,7 +68,7 @@ Formato: | nome (PT) | mapa (PT, do meurag) | t1 | t2 | id_mob | alias/EN
 | Vigia do Tempo | Torre Distorcida (3) | 120 | 130 | 3074 | Time Holder |
 
 Notas:
-- Total 66 linhas (65 MVPs; 2 Dark Lords + 2 Vesper...)
+- Total de MVPs no seed final: 64 (ver sql/seed_mvp_latam.sql)
 - id_mob só é usado para thumbnail (ratemyserver) → refactor deve aceitar NULL e pular thumbnail
 - Old-DB ids reutilizados clássicos confirmados; novos vindos do ragnaplace (URLs com id real do kRO quando identificável)
 - times: exatamente os do meurag (LATAM) — sem "custom respawn" (t1custom/t2custom = NULL)

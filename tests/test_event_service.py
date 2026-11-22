@@ -5,6 +5,7 @@ from yellowtracker.service import event_service
 def stub_bot(timezone='America/Sao_Paulo'):
     class StubBot:
         settings = Settings(bot_user_token=None, database_url=None, timezone=timezone)
+
     return StubBot()
 
 

@@ -9,11 +9,11 @@ from yellowtracker.domain.bot import Bot
 from yellowtracker.domain.models import ChannelState
 from yellowtracker.service import channel_service
 
+
 log = logging.getLogger(__name__)
 
 
-async def on_message(bot: Bot, tree: discord.app_commands.CommandTree,
-                     message: discord.Message) -> None:
+async def on_message(bot: Bot, tree: discord.app_commands.CommandTree, message: discord.Message) -> None:
     if bot.user.id == message.author.id:
         return
 
@@ -66,8 +66,7 @@ async def _notify(bot: Bot, dm_channel: discord.abc.Messageable, user_msg: str) 
     await dm_channel.send(f'Notification sent to {count} users.')
 
 
-async def _sync(bot: Bot, tree: discord.app_commands.CommandTree,
-                dm_channel: discord.abc.Messageable) -> None:
+async def _sync(bot: Bot, tree: discord.app_commands.CommandTree, dm_channel: discord.abc.Messageable) -> None:
     ts = time.time()
     await dm_channel.send(f'Begin sync slash commands with {len(bot.guilds)} guilds.')
     for guild in bot.guilds:
@@ -97,17 +96,18 @@ async def _channels(bot: Bot, dm_channel: discord.abc.Messageable) -> None:
             line += f'{channel_state.type.sql_desc} | '
             line += f'{guild} | '
             line += f'{owner} | '
-            line += f"{guild_state.timezone if guild_state.timezone is not None else '-'} | "
-            line += f"{'Yes' if guild_state.custom else 'No'} | "
-            line += f"{'Yes' if guild_state.mobile else 'No'} | "
+            line += f'{guild_state.timezone if guild_state.timezone is not None else "-"} | '
+            line += f'{"Yes" if guild_state.custom else "No"} | '
+            line += f'{"Yes" if guild_state.mobile else "No"} | '
             line += f'{len(channel_state.entry_states)}'
             lines.append(line)
     header = 'Channel | Type | Guild | Owner | Timezone | Custom | Mobile | Entries'
     await _send_paginated(bot, dm_channel, 'Channels', header, lines)
 
 
-async def _send_paginated(bot: Bot, dm_channel: discord.abc.Messageable, title: str,
-                          header: str, lines: list[str]) -> None:
+async def _send_paginated(
+    bot: Bot, dm_channel: discord.abc.Messageable, title: str, header: str, lines: list[str]
+) -> None:
     page_size = 10
     if len(lines) == 0:
         embed = discord.Embed(color=discord.Colour.gold(), title=title)

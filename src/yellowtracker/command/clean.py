@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import discord
+
 from yellowtracker.domain.bot import Bot
 from yellowtracker.domain.models import ChannelState
 from yellowtracker.domain.track_type import TrackType
@@ -19,10 +20,12 @@ async def clean(interaction: discord.Interaction, bot: Bot) -> None:
         await run_coro(interaction.response.send_message('This command can only be used in a track channel.'))
         return
 
-    await run_coro(interaction.response.send_message(
-        'This will clean the list. Are you sure?',
-        view=CleanView(bot=bot, trackType=channel_state.type),
-    ))
+    await run_coro(
+        interaction.response.send_message(
+            'This will clean the list. Are you sure?',
+            view=CleanView(bot=bot, trackType=channel_state.type),
+        )
+    )
 
 
 class CleanView(discord.ui.View):

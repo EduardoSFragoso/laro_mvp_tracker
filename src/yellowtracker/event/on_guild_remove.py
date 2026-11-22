@@ -6,6 +6,7 @@ import discord
 
 from yellowtracker.domain.bot import Bot
 
+
 log = logging.getLogger(__name__)
 
 

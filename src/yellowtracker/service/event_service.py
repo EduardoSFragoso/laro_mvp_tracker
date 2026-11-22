@@ -1,88 +1,89 @@
 from __future__ import annotations
 
 import time
-
-from pytz import timezone
+from collections.abc import Callable
 from datetime import timedelta
+
+import discord
+from pytz import timezone
 
 from yellowtracker.domain.bot import Bot
 from yellowtracker.domain.weekly_event import WeeklyEvent
-from yellowtracker.util.date_util import get_dt_now, get_local_tzinfo
+from yellowtracker.util.date_util import fmt_dt, get_dt_now, get_local_tzinfo
+
 
 EMPTY_SLOT = '—'
 
 
+def get_woe_map(bot: Bot) -> dict[str, str]:
+    """Map the WoE events onto the fixed Saturday/Sunday embed fields."""
+    return _evt_map(
+        bot,
+        'woe',
+        keys=('saturday', 'sunday'),
+        key_of=lambda weekday, _today, _tomorrow: 'saturday' if weekday != 7 else 'sunday',
+    )
+
+
 def get_gmc_map(bot: Bot) -> dict[str, str]:
-    dt_now = get_dt_now(bot.settings.timezone)
-    weekday_today = dt_now.isoweekday()
-    weekday_tomorrow = 1 if weekday_today == 7 else (weekday_today + 1)
-    evts = get_evts(bot, type='gmc')
-    gmc_map = {'ongoing': '', 'next': EMPTY_SLOT, 'today': EMPTY_SLOT, 'tomorrow': EMPTY_SLOT}
-    if not evts:
-        return gmc_map
-    next_evt = evts[0]
-    for evt in evts:
-        str_gmc = format_evt(bot, evt) + '\n'
-        if int(evt['weekday']) == weekday_today:
-            gmc_map['today'] = str_gmc
-        elif int(evt['weekday']) == weekday_tomorrow:
-            gmc_map['tomorrow'] = str_gmc
-        if evt['dt_begin'] <= dt_now <= evt['dt_end']:
-            gmc_map['ongoing'] = format_evt(bot, evt)
-        if evt['dt_begin'] <= dt_now:
-            continue
-        if next_evt['dt_begin'] <= dt_now or evt['dt_begin'] < next_evt['dt_begin']:
-            next_evt = evt
-    gmc_map['next'] = format_evt(bot, next_evt)
-    return gmc_map
+    """Map the GMC events onto today/tomorrow embed fields."""
+    return _evt_map(bot, 'gmc', keys=('today', 'tomorrow'), key_of=_today_or_tomorrow_key)
 
 
 def get_hh_map(bot: Bot) -> dict[str, str]:
+    """Map the Happy Hour events onto today/tomorrow embed fields."""
+    return _evt_map(bot, 'hh', keys=('today', 'tomorrow'), key_of=_today_or_tomorrow_key)
+
+
+def _today_or_tomorrow_key(weekday: int, weekday_today: int, weekday_tomorrow: int) -> str | None:
+    if weekday == weekday_today:
+        return 'today'
+    if weekday == weekday_tomorrow:
+        return 'tomorrow'
+    return None
+
+
+def _evt_map(
+    bot: Bot, type: str, keys: tuple[str, ...], key_of: Callable[[int, int, int], str | None]
+) -> dict[str, str]:
+    """Build the {ongoing/next/<days>} string map for one event type.
+
+    The event type with no scheduled events still yields a complete map with
+    '#' placeholders so the commands never break or show empty fields.
+    """
     dt_now = get_dt_now(bot.settings.timezone)
     weekday_today = dt_now.isoweekday()
-    weekday_tomorrow = 1 if weekday_today == 7 else (weekday_today + 1)
-    evts = get_evts(bot, type='hh')
-    hh_map = {'ongoing': '', 'next': EMPTY_SLOT, 'today': EMPTY_SLOT, 'tomorrow': EMPTY_SLOT}
-    if not evts:
-        return hh_map
-    next_evt = evts[0]
-    for evt in evts:
-        str_hh = format_evt(bot, evt) + '\n'
-        if int(evt['weekday']) == weekday_today:
-            hh_map['today'] = str_hh
-        elif int(evt['weekday']) == weekday_tomorrow:
-            hh_map['tomorrow'] = str_hh
+    weekday_tomorrow = 1 if weekday_today == 7 else weekday_today + 1
+    result: dict[str, str] = {'ongoing': '', 'next': EMPTY_SLOT, **dict.fromkeys(keys, EMPTY_SLOT)}
+    next_evt = None
+    for evt in get_evts(bot, type):
+        key = key_of(int(evt['weekday']), weekday_today, weekday_tomorrow)
+        if key in result:
+            result[key] = format_evt(bot, evt) + '\n'
         if evt['dt_begin'] <= dt_now <= evt['dt_end']:
-            hh_map['ongoing'] = format_evt(bot, evt)
-        if evt['dt_begin'] <= dt_now:
-            continue
-        if next_evt['dt_begin'] <= dt_now or evt['dt_begin'] < next_evt['dt_begin']:
+            result['ongoing'] = format_evt(bot, evt)
+        if evt['dt_begin'] > dt_now and (next_evt is None or evt['dt_begin'] < next_evt['dt_begin']):
             next_evt = evt
-    hh_map['next'] = format_evt(bot, next_evt)
-    return hh_map
+    if next_evt is not None:
+        result['next'] = format_evt(bot, next_evt)
+    return result
 
 
-def get_woe_map(bot: Bot) -> dict[str, str]:
-    dt_now = get_dt_now(bot.settings.timezone)
-    evts = get_evts(bot, type='woe')
-    woe_map = {'ongoing': '', 'next': EMPTY_SLOT, 'saturday': EMPTY_SLOT, 'sunday': EMPTY_SLOT}
-    if not evts:
-        return woe_map
-    next_evt = evts[0]
-    for evt in evts:
-        str_woe = format_evt(bot, evt) + '\n'
-        if int(evt['weekday']) == 7:
-            woe_map['sunday'] = str_woe
-        else:
-            woe_map['saturday'] = str_woe
-        if evt['dt_begin'] <= dt_now <= evt['dt_end']:
-            woe_map['ongoing'] = format_evt(bot, evt)
-        if evt['dt_begin'] <= dt_now:
-            continue
-        if next_evt['dt_begin'] <= dt_now or evt['dt_begin'] < next_evt['dt_begin']:
-            next_evt = evt
-    woe_map['next'] = format_evt(bot, next_evt)
-    return woe_map
+def build_evt_embed(bot: Bot, emoji: str, title: str, evt_map: dict[str, str]) -> discord.Embed:
+    """Format an event map as a Discord embed with the day fields in map order."""
+    embed = discord.Embed()
+    embed.title = f'{emoji} {title}'
+    embed.colour = discord.Colour.gold()
+    if evt_map['ongoing'] != '':
+        embed.add_field(name='Ongoing :boom:', value=evt_map['ongoing'], inline=False)
+    embed.add_field(name='Next :arrow_right:', value=evt_map['next'], inline=False)
+    day_keys = [key for key in evt_map if key not in ('ongoing', 'next')]
+    for key in day_keys:
+        embed.add_field(name=key.capitalize(), value=evt_map[key].rstrip('\n'), inline=False)
+    footer = 'Server Time (' + bot.settings.timezone + '): '
+    footer += fmt_dt(get_dt_now(bot.settings.timezone))
+    embed.set_footer(text=footer)
+    return embed
 
 
 def get_next_evt(bot: Bot, type: str = None) -> tuple[dict | None, bool]:
@@ -114,13 +115,13 @@ def format_evt(bot: Bot, evt: dict) -> str:
     result = '**'
     result += evt['name']
     result += '** '
-    result += f"<t:{int(time.mktime(evt['dt_begin'].astimezone(tz=local_tz).timetuple()))}:f>"
+    result += f'<t:{int(time.mktime(evt["dt_begin"].astimezone(tz=local_tz).timetuple()))}:f>'
     if evt['dt_begin'] <= dt_now <= evt['dt_end']:
         result += ' (ends '
-        result += f"<t:{int(time.mktime(evt['dt_end'].astimezone(tz=local_tz).timetuple()))}:R>"
+        result += f'<t:{int(time.mktime(evt["dt_end"].astimezone(tz=local_tz).timetuple()))}:R>'
     else:
         result += ' ('
-        result += f"<t:{int(time.mktime(evt['dt_begin'].astimezone(tz=local_tz).timetuple()))}:R>"
+        result += f'<t:{int(time.mktime(evt["dt_begin"].astimezone(tz=local_tz).timetuple()))}:R>'
     result += ')'
     return result
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import discord
+
 from yellowtracker.domain.bot import Bot
 from yellowtracker.util.coroutine_util import run_coro
 
