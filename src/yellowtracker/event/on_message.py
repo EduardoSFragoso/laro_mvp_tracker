@@ -84,7 +84,7 @@ async def _dispatch_cmd(bot: Bot, message: discord.Message) -> None:
 async def _cmd_track(bot: Bot, message: discord.Message, prefix: str, args: list[str]) -> None:
     mvp, user_time = _split_track_args(args)
     if mvp is None:
-        await message.channel.send('Use: `' + prefix + ' track <nome do MVP> [HHMM]`')
+        await message.channel.send('Use: `' + prefix + 'track <nome do MVP> [HHMM]`')
         return
     await track_core(bot, message, mvp, user_time)
 
@@ -93,8 +93,9 @@ def _split_track_args(args: list[str]) -> tuple[str | None, str | None]:
     if len(args) == 0:
         return None, None
     last = args[-1]
-    if len(args) > 1 and last.isnumeric() and len(last) == 4:
-        return ' '.join(args[:-1]), last
+    hhmm = last.replace(':', '')
+    if len(args) > 1 and hhmm.isnumeric() and len(hhmm) == 4:
+        return ' '.join(args[:-1]), hhmm
     return ' '.join(args), None
 
 

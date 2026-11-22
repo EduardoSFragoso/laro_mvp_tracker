@@ -73,6 +73,13 @@ Dentro de um canal de MVPs, há duas formas de rastrear:
 
 Os comandos são **mensagens com prefixo** (padrão `!`, configurável em `COMMAND_PREFIX`) — em vez de slash commands — para não aparecer misturados aos comandos de outros bots na lista `/`. A tabela exibe o **código kRO do mapa** (navi, ex.: `gon_dun03`) em vez do nome em português. Só mensagens que começam com o prefixo são processadas; as demais são apagadas automaticamente pela rotina de limpeza do canal (requer permissão **Manage Messages**).
 
+Como não há mais lista de comandos na barra `/`, a descoberta funciona assim:
+- Assim que um canal é definido, o bot fixa nele um embed **📖 Como usar** com a lista de comandos e exemplos — esse aviso fica permanentemente acima da tabela.
+- O bot aparece na lista de membros com o status "`!` para ver os comandos do MVP Tracker".
+- Dentro do canal, `!track` (sem argumentos) ou `!help` mostra a lista de comandos.
+
+O horário da morte pode ser informado como `2035` ou `20:35` (HHMM, timezone do servidor ou a customizada com `!timezone`).
+
 ### Comandos do bot:
 
 Comando | Descrição

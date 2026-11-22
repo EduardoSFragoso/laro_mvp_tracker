@@ -281,6 +281,7 @@ async def init_channel(bot: Bot, channel_state: ChannelState) -> None:
         await send_help_message(bot, channel_state)
     else:
         channel_state.id_help_message = help_msg.id
+        await send_help_message(bot, channel_state, help_msg)
     if table_msg is not None:
         channel_state.id_message = table_msg.id
     await update_channel_message(bot, channel_state)
@@ -292,37 +293,45 @@ def get_help_description(prefix: str) -> str:
     return (
         'Adicione um MVP à lista usando o botão **➕ TRACK MVP** '
         'ou digitando no chat:\n'
-        f'> `{p} track <nome> [minutos atrás]`\n'
+        f'> `{p}track <nome> [horário da morte HHMM]`\n'
         '\n'
         '**Exemplos:**\n'
-        f'> `{p} track Serpente Suprema 20`\n'
-        f'> `{p} track` — mostra todos os comandos\n'
+        f'> `{p}track Serpente Suprema 20:35`\n'
+        f'> `{p}track` — mostra todos os comandos\n'
         '\n'
         '**Outros comandos:**\n'
-        f'- `{p} settings` — tempos de spawn e timezone\n'
-        f'- `{p} woe` — horários da WoE\n'
-        f'- `{p} clean` — limpa o canal\n'
-        f'- `{p} setmvpchannel` / `{p} unsetmvpchannel` — canal de notificação\n'
+        f'- `{p}settings` — tempos de spawn e timezone\n'
+        f'- `{p}woe` — horários da WoE\n'
+        f'- `{p}clean` — limpa o canal\n'
+        f'- `{p}setmvpchannel` / `{p}unsetmvpchannel` — canal de notificação\n'
         '\n'
         f':warning: Só mensagens que começam com `{p}` são processadas. '
         'As demais são apagadas automaticamente.'
     )
 
 
-async def send_help_message(bot: Bot, channel_state: ChannelState) -> None:
+def _help_embed(bot: Bot) -> discord.Embed:
+    return discord.Embed(
+        colour=discord.Colour.gold(),
+        title=HELP_EMBED_TITLE,
+        description=get_help_description(bot.settings.command_prefix),
+    )
+
+
+async def send_help_message(bot: Bot, channel_state: ChannelState, message: discord.Message | None = None) -> None:
     channel = get_channel_from_bot(bot, channel_state.id_guild, channel_state.id_channel)
     if channel is None:
         return
     if validate_channel(bot, channel) is not None:
         return
-    embed = discord.Embed(
-        colour=discord.Colour.gold(),
-        title=HELP_EMBED_TITLE,
-        description=get_help_description(bot.settings.command_prefix),
-    )
-    message = await run_coro(channel.send(embed=embed))
+    # When a help message already exists (restart), refresh its content instead
+    # of sending a duplicate; otherwise send a new one after the welcome spot.
     if message is not None:
-        channel_state.id_help_message = message.id
+        await run_coro(message.edit(embed=_help_embed(bot)))
+        return
+    sent = await run_coro(channel.send(embed=_help_embed(bot)))
+    if sent is not None:
+        channel_state.id_help_message = sent.id
 
 
 async def delete_msgs(bot: Bot, channel_state: ChannelState, channel: discord.TextChannel) -> None:

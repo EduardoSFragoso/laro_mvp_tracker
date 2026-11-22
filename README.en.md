@@ -73,6 +73,13 @@ Inside an MVP channel, there are two ways to track a MVP:
 
 Commands are **prefix-based messages** (default `!`, configurable in `COMMAND_PREFIX`) — instead of slash commands — so they do not mix with the slash commands of other bots on the `/` list. The table shows the **kRO map code** (navi, e.g. `gon_dun03`) instead of the Portuguese map name. Only messages starting with the prefix are processed; anything else is deleted automatically by the channel cleaning routine (requires the **Manage Messages** permission).
 
+Since there is no more command list on the `/` bar, discovery works like this:
+- As soon as a channel is defined, the bot pins a **📖 How to use** embed in it with the command list and examples — this notice stays above the table for good.
+- The bot shows the status "`!` to see the MVP Tracker commands" on the member list.
+- Inside the channel, `!track` (no arguments) or `!help` shows the command list.
+
+The time of death can be given as `2035` or `20:35` (HHMM, in the server timezone or the custom one set with `!timezone`).
+
 ### Bot commands:
 
 Command | Description
