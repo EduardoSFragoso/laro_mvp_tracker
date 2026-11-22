@@ -33,8 +33,8 @@ def test_multiple_matches_msg_mentions_time():
 
 
 def test_multiple_matches_msg_no_time():
-    msg = _multiple_matches_msg(TrackType.MINING, 'coal', None)
-    assert 'coal' in msg
+    msg = _multiple_matches_msg(TrackType.MVP, 'atroce', None)
+    assert 'atroce' in msg
     assert 'time' not in msg
 
 

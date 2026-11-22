@@ -4,6 +4,8 @@ Yellow Tracker — reseed the MVP list with the Ragnarok Online LATAM data.
 Run this when upgrading an existing database whose `mvp` table still holds the
 old MVP list. WARNING: it removes the current MVP list and aliases (active
 tracks reference deleted MVPs and are removed as well).
+It also drops the legacy mining tables and leftover guild columns (the mining
+tracking feature does not exist on the LATAM server).
 */
 
 BEGIN;
@@ -12,6 +14,12 @@ DELETE FROM mvp_guild_log;
 DELETE FROM mvp_guild;
 DELETE FROM mvp_alias;
 DELETE FROM mvp;
+
+DROP TABLE IF EXISTS mining_guild_log;
+DROP TABLE IF EXISTS mining_guild;
+DROP TABLE IF EXISTS mining;
+ALTER TABLE guild DROP COLUMN IF EXISTS id_mining_channel;
+ALTER TABLE guild DROP COLUMN IF EXISTS id_member_channel;
 
 INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Abelha-Rainha','Monte Mjolnir (4)',120,130,1059);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Mistress');

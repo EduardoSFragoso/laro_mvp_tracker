@@ -61,8 +61,6 @@ Dentro de um canal de MVPs, há três formas de rastrear:
 
 Há uma rotina que limpa o canal periodicamente, mantendo apenas a mensagem da lista de MVPs (requer permissão **Manage Channel**).
 
-Além de MVPs, o bot pode rastrear pontos de mineração, onde cada ponto reúne um ou mais mapas. Use **/setminingchannel** para definir o canal de mineração.
-
 ### Comandos do bot:
 
 Comando | Descrição
@@ -70,13 +68,11 @@ Comando | Descrição
 **/track** `nome` `hora` | Registra que o MVP `nome` morreu. O argumento `hora` determina o horário exato da morte, no formato `HHMM`, relativo à timezone configurada ou a uma timezone customizada definida com `/timezone`.
 **/setmvpchannel** | Define o canal atual como canal de rastreio de MVPs.
 **/unsetmvpchannel** | Cancela o canal de rastreio de MVPs.
-**/setminingchannel** | Define o canal atual como canal de rastreio de mineração.
-**/unsetminingchannel** | Cancela o canal de rastreio de mineração.
 **/custom** | Ativa/desativa tempos de respawn customizados. No LATAM os MVPs não têm tempos custom cadastrados, então o padrão é sempre usado.
 **/timezone** | Define uma timezone customizada para o rastreio quando o horário é informado via `HH:MM`.
 **/mobile** | Ativa/desativa o layout mobile da tabela.
 **/settings** | Mostra as configurações atuais do bot.
-**/clean** | Remove todos os MVPs/pontos de mineração rastreados da tabela (útil após reinícios do servidor).
+**/clean** | Remove todos os MVPs rastreados da tabela (útil após reinícios do servidor).
 **/woe** | Mostra o horário da Guerra do Emperium (WoE): todo domingo, das 20h às 22h (horário do servidor, UTC-3).
 **/gmc** | Mostra os horários de Game Master Challenge — sem eventos programados no LATAM.
 **/hh** | Mostra os horários de Battleground Happy Hour — sem eventos programados no LATAM.
@@ -151,23 +147,6 @@ Tao Gunka | Tao | Karu, a Caverna do Oeste | 300~310 min
 Valquíria Randgris | VR, Valkyrie Randgris | Templo de Odin (3) | 480~490 min
 Vesper | — | Centro de Juperos | 120~130 min
 Vigia do Tempo | Time Holder | Torre Distorcida (3) | 120~130 min
-
-## Pontos de mineração
-
-Nome
-----
-Payon Dungeon F1, F2
-Coal Mine Entrance, F1, F2, F3
-Einbech Dungeon Entrance, F1, F2
-Geffen Dungeon F1, F2, F3
-Thor Volcano F1, F2, F3
-Magma Dungeon F1, F2
-Ice Dungeon F1, F2, F3
-Byalan Dungeon F1, F2, F3, F4, F5
-Louyang F1, F2
-Comodo West, North, East
-Mistress Map
-Umbala Dungeon F1, F2
 
 ## Testes e validação
 

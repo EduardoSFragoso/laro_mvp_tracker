@@ -7,7 +7,7 @@ import asyncpg
 import discord
 
 from yellowtracker.domain.bot import Bot
-from yellowtracker.domain.models import ChannelState, GuildState, MiningLocation, Mvp
+from yellowtracker.domain.models import ChannelState, GuildState, Mvp
 from yellowtracker.domain.track_type import TrackType
 from yellowtracker.service import channel_service, entry_service
 from yellowtracker.util.coroutine_util import run_coro
@@ -52,7 +52,6 @@ async def load_database(bot: Bot, conn) -> None:
     for db_guild in db_guild_list:
         if channel_service.get_guild_from_bot(bot, db_guild['id']) is None:
             await conn.execute('DELETE FROM mvp_guild WHERE id_guild=$1', db_guild['id'])
-            await conn.execute('DELETE FROM mining_guild WHERE id_guild=$1', db_guild['id'])
             await conn.execute('DELETE FROM guild WHERE id=$1', db_guild['id'])
     for guild in bot.guilds:
         guild_state = GuildState(id_guild=guild.id)
@@ -65,18 +64,11 @@ async def load_database(bot: Bot, conn) -> None:
             guild_state.mobile = db_guild['mobile']
             guild_state.timezone = db_guild['timezone']
             guild_state.id_mvp_channel = db_guild['id_mvp_channel']
-            guild_state.id_mining_channel = db_guild['id_mining_channel']
             if guild_state.id_mvp_channel is not None:
                 guild_state.channel_states[guild_state.id_mvp_channel] = ChannelState(
                     id_channel=guild_state.id_mvp_channel,
                     id_guild=guild.id,
                     type=TrackType.MVP,
-                )
-            if guild_state.id_mining_channel is not None:
-                guild_state.channel_states[guild_state.id_mining_channel] = ChannelState(
-                    id_channel=guild_state.id_mining_channel,
-                    id_guild=guild.id,
-                    type=TrackType.MINING,
                 )
 
     log.info('Load MVPs.')
@@ -85,18 +77,8 @@ async def load_database(bot: Bot, conn) -> None:
         mvp = next(x for x in bot.mvp_list if x.id == db_mvp_alias['id_mvp'])
         mvp.alias.append(db_mvp_alias['alias'])
 
-    log.info('Load mining locations.')
-    bot.mining_list = []
-    for db_mining in await conn.fetch('SELECT * FROM mining'):
-        mining = MiningLocation(**dict(db_mining))
-        mining.t1 = 30
-        bot.mining_list.append(mining)
-
     log.info('Load MVP entries.')
-    await entry_service.load_db_entries(bot, conn, TrackType.MVP)
-
-    log.info('Load mining location entries.')
-    await entry_service.load_db_entries(bot, conn, TrackType.MINING)
+    await entry_service.load_db_entries(bot, conn)
 
     log.info('Init track channels.')
     for id_guild, guild_state in bot.guild_states.items():

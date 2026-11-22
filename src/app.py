@@ -5,8 +5,8 @@ import logging
 
 import discord
 
-from yellowtracker.command import clean, custom, gmc, hh, mobile, settings, set_mining_channel, \
-    set_mvp_channel, timezone, track, unset_mining_channel, unset_mvp_channel, unsettimezone, woe
+from yellowtracker.command import clean, custom, gmc, hh, mobile, settings, \
+    set_mvp_channel, timezone, track, unset_mvp_channel, unsettimezone, woe
 from yellowtracker.config import load_settings
 from yellowtracker.domain.bot import Bot
 from yellowtracker.event import on_guild_join, on_guild_remove, on_message, on_ready
@@ -48,11 +48,6 @@ async def _mobile(interaction: discord.Interaction):
     await mobile.mobile(interaction, bot)
 
 
-@tree.command(name='setminingchannel', description='Define a channel to track mining locations')
-async def _setminingchannel(interaction: discord.Interaction):
-    await set_mining_channel.setminingchannel(interaction, bot)
-
-
 @tree.command(name='setmvpchannel', description='Define a channel to track MVPs')
 async def _setmvpchannel(interaction: discord.Interaction):
     await set_mvp_channel.setmvpchannel(interaction, bot)
@@ -66,11 +61,6 @@ async def _settings(interaction: discord.Interaction):
 @tree.command(name='track', description='Track a MVP that has been defeated')
 async def _track(interaction: discord.Interaction, mvp: str, time: str = None):
     await track.track(interaction, bot, mvp, time)
-
-
-@tree.command(name='unsetminingchannel', description='Undo MVP track channel definition')
-async def _unsetminingchannel(interaction: discord.Interaction):
-    await unset_mining_channel.unsetminingchannel(interaction, bot)
 
 
 @tree.command(name='unsetmvpchannel', description='Undo MVP track channel definition')

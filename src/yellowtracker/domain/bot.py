@@ -4,7 +4,7 @@ import discord
 from asyncpg.pool import Pool
 
 from yellowtracker.config import Settings
-from yellowtracker.domain.models import GuildState, Mvp, MiningLocation
+from yellowtracker.domain.models import GuildState, Mvp
 
 
 class Bot(discord.Client):
@@ -16,7 +16,6 @@ class Bot(discord.Client):
         self.pool: Pool | None = None
         self.guild_states: dict[int, GuildState] = {}
         self.mvp_list: list[Mvp] = []
-        self.mining_list: list[MiningLocation] = []
         self.tracker_ready = False
 
     def get_guild_state(self, id_guild: int) -> GuildState | None:

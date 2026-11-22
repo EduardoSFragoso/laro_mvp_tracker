@@ -23,32 +23,22 @@ class Mvp:
 
 
 @dataclass
-class MiningLocation:
-    """A mining location entry as loaded from the database."""
-
-    id: int
-    name: str
-    t1: int  # tracking window in minutes
-    alias: list[str] = field(default_factory=list)
-
-
-@dataclass
 class EntryLog:
-    """A log entry for the last tracked MVPs/mining locations of a channel."""
+    """A log entry for the last tracked MVPs of a channel."""
 
-    entry: Mvp | MiningLocation
+    entry: Mvp
     date: datetime
     id_user: int
 
 
 @dataclass
 class TrackEntryState:
-    """Runtime state of a tracked entry within a channel."""
+    """Runtime state of a tracked MVP within a channel."""
 
-    entry: Mvp | MiningLocation
+    entry: Mvp
     track_time: datetime
     t1: int  # effective window, in minutes
-    t2: int | None = None  # None when the channel type is MINING
+    t2: int = -999
     r1: int = -999
     r2: int = -999
 
@@ -74,7 +64,6 @@ class GuildState:
     mobile: bool = False
     timezone: str | None = None
     id_mvp_channel: int | None = None
-    id_mining_channel: int | None = None
     channel_states: dict[int, ChannelState] = field(default_factory=dict)
 
     def get_channel_state(self, type: TrackType) -> ChannelState | None:

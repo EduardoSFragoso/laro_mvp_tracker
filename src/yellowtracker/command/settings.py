@@ -14,17 +14,10 @@ async def settings_cmd(interaction: discord.Interaction, bot: Bot) -> None:
         await interaction.response.defer()
         return
     guild_state = bot.guild_states[guild.id]
-    mvp_channel = None
-    mining_channel = None
-    for channel_id, channel_state in guild_state.channel_states.items():
-        channel = channel_service.get_channel_from_guild(guild, channel_id)
-        if channel_state.type == TrackType.MVP:
-            mvp_channel = channel
-        else:
-            mining_channel = channel
+    mvp_channel = guild_state.get_channel_state(TrackType.MVP)
+    mvp_channel = channel_service.get_channel_from_guild(guild, mvp_channel.id_channel) if mvp_channel is not None else None
     msg = f"Custom MVP Times: {Emoji.YES.value if guild_state.custom else Emoji.NO.value}\n"
     msg += f"Mobile Layout: {Emoji.YES.value if guild_state.mobile else Emoji.NO.value}\n"
     msg += f"MVP Channel: {'' if mvp_channel is None else mvp_channel.mention}\n"
-    msg += f"Mining Channel: {'' if mining_channel is None else mining_channel.mention}\n"
     msg += f"Timezone: {'' if guild_state.timezone is None else guild_state.timezone}"
     await run_coro(interaction.response.send_message(msg))

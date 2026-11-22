@@ -10,9 +10,6 @@ it may be NULL, in which case no thumbnail is shown.
 Command to (re)apply the MVP seed on an existing database: sql/seed_mvp_latam.sql
 */
 
-DROP TABLE IF EXISTS mining_guild_log;
-DROP TABLE IF EXISTS mining_guild;
-DROP TABLE IF EXISTS mining;
 DROP TABLE IF EXISTS mvp_guild_log;
 DROP TABLE IF EXISTS mvp_guild;
 DROP TABLE IF EXISTS mvp_alias;
@@ -20,10 +17,8 @@ DROP TABLE IF EXISTS mvp;
 DROP TABLE IF EXISTS guild;
 DROP TABLE IF EXISTS global_parameter;
 DROP SEQUENCE IF EXISTS mvp_seq;
-DROP SEQUENCE IF EXISTS mining_seq;
 
 CREATE SEQUENCE mvp_seq;
-CREATE SEQUENCE mining_seq;
 
 CREATE TABLE global_parameter (
     id bigint NOT NULL,
@@ -37,8 +32,6 @@ CREATE TABLE guild (
     mobile boolean NOT NULL DEFAULT FALSE,
     timezone text,
     id_mvp_channel bigint,
-    id_mining_channel bigint,
-    id_member_channel bigint,
     CONSTRAINT guild_pk PRIMARY KEY (id)
 );
 
@@ -54,12 +47,6 @@ CREATE TABLE mvp (
     CONSTRAINT mvp_pk PRIMARY KEY (id)
 );
 
-CREATE TABLE mining (
-    id integer NOT NULL DEFAULT nextval('mining_seq'::regclass),
-    name text NOT NULL,
-    CONSTRAINT mining_pk PRIMARY KEY (id)
-);
-
 CREATE TABLE mvp_alias (
     id_mvp integer NOT NULL,
     alias text NOT NULL,
@@ -73,27 +60,12 @@ CREATE TABLE mvp_guild (
     CONSTRAINT mvp_guild_pk PRIMARY KEY (id_mvp, id_guild)
 );
 
-CREATE TABLE mining_guild (
-    id_mining integer NOT NULL,
-    id_guild bigint NOT NULL,
-    track_time timestamp without time zone NOT NULL,
-    CONSTRAINT mining_guild_pk PRIMARY KEY (id_mining, id_guild)
-);
-
 CREATE TABLE mvp_guild_log (
     id_mvp integer NOT NULL,
     id_guild bigint NOT NULL,
     id_user bigint NOT NULL,
     date timestamp without time zone NOT NULL,
     CONSTRAINT mvp_guild_log_pk PRIMARY KEY (id_mvp, id_guild)
-);
-
-CREATE TABLE mining_guild_log (
-    id_mining integer NOT NULL,
-    id_guild bigint NOT NULL,
-    id_user bigint NOT NULL,
-    date timestamp without time zone NOT NULL,
-    CONSTRAINT mining_guild_log_pk PRIMARY KEY (id_mining, id_guild)
 );
 
 INSERT INTO global_parameter(id)VALUES(1);
@@ -232,20 +204,3 @@ INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Valkyrie Randgris'
 INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Vesper','Centro de Juperos',120,130,1685);
 INSERT INTO mvp(name,map,t1,t2,id_mob)VALUES('Vigia do Tempo','Torre Distorcida (3)',120,130,3074);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Time Holder');
-
--- ---------------------------------------------------------------------------
--- Mining locations
--- ---------------------------------------------------------------------------
-
-INSERT INTO mining(name)VALUES('Payon Dungeon F1, F2');
-INSERT INTO mining(name)VALUES('Coal Mine Entrance, F1, F2, F3');
-INSERT INTO mining(name)VALUES('Einbech Dungeon Entrance, F1, F2');
-INSERT INTO mining(name)VALUES('Geffen Dungeon F1, F2, F3');
-INSERT INTO mining(name)VALUES('Thor Volcano F1, F2, F3');
-INSERT INTO mining(name)VALUES('Magma Dungeon F1, F2');
-INSERT INTO mining(name)VALUES('Ice Dungeon F1, F2, F3');
-INSERT INTO mining(name)VALUES('Byalan Dungeon F1, F2, F3, F4, F5');
-INSERT INTO mining(name)VALUES('Louyang F1, F2');
-INSERT INTO mining(name)VALUES('Comodo West, North, East');
-INSERT INTO mining(name)VALUES('Mistress Map');
-INSERT INTO mining(name)VALUES('Umbala Dungeon F1, F2');

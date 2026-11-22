@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from yellowtracker.domain.models import ChannelState, Mvp, MiningLocation, TrackEntryState
+from yellowtracker.domain.models import ChannelState, Mvp, TrackEntryState
 from yellowtracker.domain.track_type import TrackType
 from yellowtracker.util import track_util
 
@@ -10,9 +10,6 @@ from yellowtracker.util import track_util
 def make_mvp_channel(mobile=False):
     return ChannelState(id_channel=1, id_guild=100, type=TrackType.MVP)
 
-
-def make_mining_channel():
-    return ChannelState(id_channel=2, id_guild=100, type=TrackType.MINING)
 
 
 def make_mvp(**overrides):
@@ -62,15 +59,6 @@ def test_track_entry_custom_ignored_when_null():
     assert entry_state.r1 in (59, 60)
 
 
-def test_track_entry_mining_has_no_t2():
-    channel_state = make_mining_channel()
-    mining = MiningLocation(id=5, name='Louyang F1, F2', t1=30)
-    now = datetime.now()
-    entry_state = track_util.track_entry(channel_state, mining, now)
-    assert entry_state.t2 is None
-    assert entry_state.r2 == -999
-    assert channel_state.entry_states == [entry_state]
-
 
 def test_track_entry_reuse_existing_state():
     channel_state = make_mvp_channel()
@@ -97,7 +85,7 @@ def test_calc_remaining_time_updates_both():
     entry_state = TrackEntryState(entry=None, track_time=datetime.now(), t1=60, t2=70)
     track_time = datetime.now() - timedelta(minutes=5)
     entry_state.track_time = track_time
-    track_util.calc_remaining_time(entry_state, track_time, TrackType.MVP)
+    track_util.calc_remaining_time(entry_state, track_time)
     assert entry_state.r1 == 55
     assert entry_state.r2 == 65
 

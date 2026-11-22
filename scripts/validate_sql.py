@@ -2,7 +2,7 @@
 
 Verifica:
 - Sintaxe de todo o SQL (schema + seed);
-- Contagens do seed (66 MVPs, 12 mining, aliases);
+- Contagens do seed (64 MVPs, aliases);
 - Ordem dos currval (todo mvp_alias deve vir imediatamente após um INSERT em mvp);
 - t1 <= t2, id_mob presente ou NULL.
 """
@@ -70,9 +70,8 @@ def main() -> int:
 
     print(f"seed: {dict(counts)}")
     check(counts.get("mvp") == 64, f"64 MVPs (obtido {counts.get('mvp')})")
-    # o seed de upgrade não recria a lista de mineração (só schema completo tem)
-    n_min = counts.get("mining") or counts.get("mining_location") or 0
-    check(n_min in (0, 12), f"mining em (0, 12) (obtido {n_min})")
+    # o seed de upgrade não recria a lista de mineração (só schema completo tinha)
+    check(counts.get('mining') in (0, None), f"seed sem mining (obtido {counts.get('mining')})")
     aliases = counts.get("mvp_alias", 0)
     check(aliases <= 66, f"aliases <= 66 (obtido {aliases})")
 
@@ -94,7 +93,7 @@ def main() -> int:
     tables_full = Counter(s.this.this.name for s in stmts_full if isinstance(s, exp.Insert))  # type: ignore[index,union-attr]
     print(f"yellowtracker.sql inserts: {dict(tables_full)}")
     check(tables_full.get("mvp") == 64, f"schema+seed: 64 MVPs (obtido {tables_full.get('mvp')})")
-    check(tables_full.get("mining") == 12, f"schema+seed: 12 mining (obtido {tables_full.get('mining')})")
+    check(tables_full.get("mining") in (0, None), f"schema sem mining (obtido {tables_full.get('mining')})")
 
     if failures:
         print(f"\n{len(failures)} problema(s): " + "; ".join(failures))

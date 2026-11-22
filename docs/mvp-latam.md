@@ -73,4 +73,4 @@ Notas:
 - Old-DB ids reutilizados clássicos confirmados; novos vindos do ragnaplace (URLs com id real do kRO quando identificável)
 - times: exatamente os do meurag (LATAM) — sem "custom respawn" (t1custom/t2custom = NULL)
 - Dark Lord aparece 3x no meurag? Não — 2x ("Senhor das Trevas" gl_chyard e "Cemitério Amaldiçoado") + "Lorde das Trevas" (Porão). Todos id 1272.
-- Mineração: mantida igual (12 localidades)
+- Mineração: removida do bot — o recurso não existe no servidor LATAM oficial

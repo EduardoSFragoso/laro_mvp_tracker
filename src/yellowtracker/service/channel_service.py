@@ -88,7 +88,7 @@ def _resolve_query(bot: Bot, guild_state, channel_state: ChannelState,
         if isinstance(parsed, str):
             return [], 0, parsed
         mins_ago = int((get_dt_now(timezone) - parsed) / timedelta(minutes=1))
-    results = entry_service.find_entry(bot, mvp, channel_state.type)
+    results = entry_service.find_entry(bot, mvp)
     return results, mins_ago, None
 
 
@@ -131,8 +131,7 @@ async def _dispatch_track(bot: Bot, channel_state: ChannelState, results: list,
         msg = _multiple_matches_msg(type, mvp, user_time)
         await run_coro(sender.send(
             msg,
-            view=TrackView(bot=bot, opts=results, mins_ago=mins_ago,
-                           user_time=user_time, track_type=type),
+            view=TrackView(bot=bot, opts=results, mins_ago=mins_ago, user_time=user_time),
         ))
 
 
@@ -210,18 +209,16 @@ async def update_track_time(bot: Bot, channel_state: ChannelState, entry,
     entry_state = track_util.track_entry(
         channel_state, entry, track_time, custom=bot.get_guild_state(channel_state.id_guild).custom)
     await update_channel_message(bot, channel_state)
-    return _fmt_track_reply(entry_state, type, user_time)
+    return _fmt_track_reply(entry_state, user_time)
 
 
-def _fmt_track_reply(entry_state, type: TrackType, user_time: str) -> str:
+def _fmt_track_reply(entry_state, user_time: str) -> str:
     msg = entry_state.entry.name
-    if type == TrackType.MVP:
-        msg += ' (' + entry_state.entry.map + ')'
+    msg += ' (' + entry_state.entry.map + ')'
     msg += ' in '
     msg += track_util.fmt_r1_r2(int(entry_state.r1))
-    if type == TrackType.MVP:
-        msg += ' to '
-        msg += track_util.fmt_r1_r2(int(entry_state.r2))
+    msg += ' to '
+    msg += track_util.fmt_r1_r2(int(entry_state.r2))
     msg += ' minutes'
     if user_time is not None:
         msg += ' (time: ' + user_time + ')'
@@ -329,12 +326,10 @@ async def update_channel_message(bot: Bot, channel_state: ChannelState) -> None:
     local_tz = get_local_tzinfo()
     guild_state = bot.guild_states[channel_state.id_guild]
     mobile = guild_state.mobile
-    track_type = channel_state.type
-    cmp = 'r2' if track_type == TrackType.MVP else 'r1'
 
     embed = discord.Embed()
     embed.colour = discord.Colour.gold()
-    embed.title = (':crown: ' if track_type == TrackType.MVP else ':pick: ') + track_type.desc + 'S'
+    embed.title = ':crown: MVPs'
 
     names: list[str] = []
     maps: list[str] = []
@@ -344,22 +339,18 @@ async def update_channel_message(bot: Bot, channel_state: ChannelState) -> None:
     active_entry_states = []
     inactive_entry_state_ids = []
     for entry_state in channel_state.entry_states:
-        if getattr(entry_state, cmp) > -bot.settings.table_entry_expiration_mins:
+        if entry_state.r2 > -bot.settings.table_entry_expiration_mins:
             remaining_time = track_util.fmt_r1_r2(int(entry_state.r1))
-            if track_type == TrackType.MVP:
-                if id_mob_first_entry is None:
-                    id_mob_first_entry = entry_state.entry.id_mob
-                remaining_time += ' to ' + track_util.fmt_r1_r2(int(entry_state.r2))
+            if id_mob_first_entry is None:
+                id_mob_first_entry = entry_state.entry.id_mob
+            remaining_time += ' to ' + track_util.fmt_r1_r2(int(entry_state.r2))
             remaining_time += ' mins'
             if mobile:
-                name = entry_state.entry.name
-                if track_type == TrackType.MVP:
-                    name += ' (' + entry_state.entry.map + ')'
-                names.append(name + ' | ' + remaining_time)
+                names.append(entry_state.entry.name + ' (' + entry_state.entry.map + ')'
+                             + ' | ' + remaining_time)
             else:
                 names.append(entry_state.entry.name)
-                if track_type == TrackType.MVP:
-                    maps.append(entry_state.entry.map)
+                maps.append(entry_state.entry.map)
                 remaining_times.append(remaining_time)
             active_entry_states.append(entry_state)
         else:
@@ -369,33 +360,28 @@ async def update_channel_message(bot: Bot, channel_state: ChannelState) -> None:
 
     conn = await bot.pool_acquire()
     try:
-        del_entry_state_sql = (
-            f'DELETE FROM {track_type.sql_desc}_guild '
-            f'WHERE id_{track_type.sql_desc}=$1 AND id_guild=$2'
-        )
+        del_entry_state_sql = 'DELETE FROM mvp_guild WHERE id_mvp=$1 AND id_guild=$2'
         await conn.executemany(del_entry_state_sql, inactive_entry_state_ids)
     finally:
         await bot.pool_release(conn)
 
     if len(names) == 0:
-        embed.add_field(name=':x:', value=f'{track_type.desc} list is empty', inline=False)
+        embed.add_field(name=':x:', value='MVP list is empty', inline=False)
     else:
         if len(names) > TABLE_MAX_ROWS + 1:
             diff = len(names) - TABLE_MAX_ROWS
             for _ in range(0, diff):
                 names.pop()
-                if track_type == TrackType.MVP:
-                    maps.pop()
+                maps.pop()
                 remaining_times.pop()
             names.append(f'and {diff} more...')
-        if track_type == TrackType.MVP and id_mob_first_entry is not None:
+        if id_mob_first_entry is not None:
             embed.set_thumbnail(url='https://file5s.ratemyserver.net/mobs/' + str(id_mob_first_entry) + '.gif')
         if mobile:
             embed.add_field(name='Name', value=track_util.fmt_column(names), inline=False)
         else:
             embed.add_field(name='Name', value=track_util.fmt_column(names), inline=True)
-            if track_type == TrackType.MVP:
-                embed.add_field(name='Map', value=track_util.fmt_column(maps), inline=True)
+            embed.add_field(name='Map', value=track_util.fmt_column(maps), inline=True)
             embed.add_field(name='Remaining Time', value=track_util.fmt_column(remaining_times), inline=True)
 
     if len(channel_state.entry_logs) > 0:
@@ -405,8 +391,7 @@ async def update_channel_message(bot: Bot, channel_state: ChannelState) -> None:
                 result += '\n'
             result += f"[<t:{int(time.mktime(entry_log.date.astimezone(tz=local_tz).timetuple()))}:R>]"
             result += ' ' + entry_log.entry.name
-            if track_type == TrackType.MVP:
-                result += ' (' + entry_log.entry.map + ')'
+            result += ' (' + entry_log.entry.map + ')'
             result += ' by <@' + str(entry_log.id_user) + '>'
         embed.add_field(name='Track Log', value=result, inline=False)
 
@@ -468,27 +453,21 @@ class SetChannelNoButton(discord.ui.Button):
 
 
 class TrackView(discord.ui.View):
-    def __init__(self, *, timeout=180, bot: Bot, opts: list, mins_ago: int,
-                 user_time: str, track_type: TrackType):
+    def __init__(self, *, timeout=180, bot: Bot, opts: list, mins_ago: int, user_time: str):
         super().__init__(timeout=timeout)
-        self.add_item(TrackSelect(bot=bot, opts=opts, mins_ago=mins_ago,
-                                  user_time=user_time, track_type=track_type))
+        self.add_item(TrackSelect(bot=bot, opts=opts, mins_ago=mins_ago, user_time=user_time))
 
 
 class TrackSelect(discord.ui.Select):
-    def __init__(self, bot: Bot, opts: list, mins_ago: int, user_time: str, track_type: TrackType):
+    def __init__(self, bot: Bot, opts: list, mins_ago: int, user_time: str):
         self.bot = bot
         self.opts = opts
         self.mins_ago = mins_ago
         self.user_time = user_time
-        self.track_type = track_type
-        options = []
-        for opt in self.opts:
-            if track_type == TrackType.MVP:
-                options.append(discord.SelectOption(label=opt.name, description=opt.map,
-                                                    value=str(opt.id)))
-            else:
-                options.append(discord.SelectOption(label=opt.name, value=str(opt.id)))
+        options = [
+            discord.SelectOption(label=opt.name, description=opt.map, value=str(opt.id))
+            for opt in self.opts
+        ]
         super().__init__(placeholder='Select an option', options=options)
 
     async def callback(self, interaction: discord.Interaction):

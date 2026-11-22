@@ -15,7 +15,6 @@ async def on_guild_remove(guild: discord.Guild, bot: Bot) -> None:
     conn = await bot.pool_acquire()
     try:
         await conn.execute('DELETE FROM mvp_guild WHERE id_guild=$1', guild.id)
-        await conn.execute('DELETE FROM mining_guild WHERE id_guild=$1', guild.id)
         await conn.execute('DELETE FROM guild WHERE id=$1', guild.id)
     finally:
         await bot.pool_release(conn)
