@@ -26,9 +26,11 @@ def find_entry(bot: Bot, query: str) -> list[Mvp]:
 
 
 def _entry_compare(entry: Mvp) -> list[str]:
-    compares = [entry.name, entry.name + ' ' + entry.map]
+    map_refs = [entry.map] if entry.navi is None else [entry.navi, entry.map]
+    compares = [entry.name]
+    compares.extend(entry.name + ' ' + ref for ref in map_refs)
     compares.extend(entry.alias)
-    compares.extend(alias + ' ' + entry.map for alias in entry.alias)
+    compares.extend(alias + ' ' + ref for alias in entry.alias for ref in map_refs)
     return compares
 
 
@@ -56,7 +58,7 @@ def ac_entries(bot: Bot, query: str) -> list[tuple[str, str]]:
     results: list[tuple[str, str]] = []
     for entry in matched:
         if name_counts[entry.name.lower()] > 1:
-            results.append((f'{entry.name} ({entry.map})', f'{entry.name} {entry.map}'))
+            results.append((f'{entry.name} ({entry.display_map})', f'{entry.name} {entry.display_map}'))
         else:
             results.append((entry.name, entry.name))
         if len(results) == 25:

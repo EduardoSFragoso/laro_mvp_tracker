@@ -11,9 +11,7 @@ from yellowtracker.domain.models import GuildState
 log = logging.getLogger(__name__)
 
 
-async def on_guild_join(guild: discord.Guild, tree: discord.app_commands.CommandTree, bot: Bot) -> None:
-    tree.copy_global_to(guild=guild)
-    await tree.sync(guild=guild)
+async def on_guild_join(guild: discord.Guild, bot: Bot) -> None:
     log.info(f'Joined to {guild.name}.')
     bot.guild_states[guild.id] = GuildState(id_guild=guild.id)
     conn = await bot.pool_acquire()

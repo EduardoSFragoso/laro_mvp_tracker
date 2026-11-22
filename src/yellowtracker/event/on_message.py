@@ -1,30 +1,29 @@
 from __future__ import annotations
 
 import logging
-import time
 
 import discord
 
+from yellowtracker.command import clean, settings, timezone, unset_mvp_channel, unsettimezone, woe
+from yellowtracker.command.set_mvp_channel import setmvpchannel_core
+from yellowtracker.command.track import track_core
 from yellowtracker.domain.bot import Bot
-from yellowtracker.domain.models import ChannelState
 from yellowtracker.service import channel_service
 
 
 log = logging.getLogger(__name__)
 
 
-async def on_message(bot: Bot, tree: discord.app_commands.CommandTree, message: discord.Message) -> None:
+async def on_message(bot: Bot, message: discord.Message) -> None:
     if bot.user.id == message.author.id:
         return
 
-    if isinstance(message.channel, discord.channel.TextChannel):
-        guild_state = bot.get_guild_state(message.guild.id)
-        if not guild_state:
-            return
-        channel_state = guild_state.channel_states.get(message.channel.id)
-        if not channel_state:
-            return
-        await _track(bot, message, channel_state)
+    if (
+        isinstance(message.channel, discord.channel.TextChannel)
+        and message.content.startswith(bot.settings.command_prefix)
+        and bot.tracker_ready
+    ):
+        await _dispatch_cmd(bot, message)
 
     if not _is_dm_channel_message(bot, message):
         return
@@ -37,9 +36,73 @@ async def on_message(bot: Bot, tree: discord.app_commands.CommandTree, message: 
             return
         await _notify(bot, message.channel, args[1])
     if args[0] == '!sync':
-        await _sync(bot, tree, message.channel)
+        await _sync(bot, message.channel)
     if args[0] == '!channels':
         await _channels(bot, message.channel)
+
+
+async def _dispatch_cmd(bot: Bot, message: discord.Message) -> None:
+    prefix = bot.settings.command_prefix
+    parts = message.content[len(prefix) :].strip().split()
+    if len(parts) == 0:
+        await _reply_help(bot, message)
+        return
+    sub = parts[0].lower()
+    args = parts[1:]
+    if sub == 'help':
+        await _reply_help(bot, message)
+    elif sub == 'track':
+        await _cmd_track(bot, message, prefix, args)
+    elif sub == 'woe':
+        await woe.woe_core(bot, message)
+    elif sub == 'settings':
+        await settings.settings_core(bot, message)
+    elif sub == 'clean':
+        await clean.clean_core(bot, message)
+    elif sub == 'timezone':
+        if len(args) >= 1:
+            await timezone.timezone_core(bot, message, ' '.join(args))
+        else:
+            await message.channel.send('Use: `' + prefix + ' timezone <timezone>`')
+    elif sub == 'unsettimezone':
+        await unsettimezone.unsettimezone_core(bot, message)
+    elif sub == 'setmvpchannel':
+        await setmvpchannel_core(bot, message)
+    elif sub == 'unsetmvpchannel':
+        await unset_mvp_channel.unsetmvpchannel_core(bot, message)
+    else:
+        await message.channel.send(
+            'Comando "' + sub + '" não existe. Digite `' + prefix + '` ou `' + prefix + ' help` '
+            'para ver os comandos disponíveis.'
+        )
+
+
+async def _cmd_track(bot: Bot, message: discord.Message, prefix: str, args: list[str]) -> None:
+    mvp, user_time = _split_track_args(args)
+    if mvp is None:
+        await message.channel.send('Use: `' + prefix + ' track <nome do MVP> [HHMM]`')
+        return
+    await track_core(bot, message, mvp, user_time)
+
+
+def _split_track_args(args: list[str]) -> tuple[str | None, str | None]:
+    if len(args) == 0:
+        return None, None
+    last = args[-1]
+    if len(args) > 1 and last.isnumeric() and len(last) == 4:
+        return ' '.join(args[:-1]), last
+    return ' '.join(args), None
+
+
+async def _reply_help(bot: Bot, message: discord.Message) -> None:
+    from yellowtracker.service.channel_service import get_help_description
+
+    embed = discord.Embed(
+        colour=discord.Colour.gold(),
+        title=':book: Comandos',
+        description=get_help_description(bot.settings.command_prefix),
+    )
+    await message.channel.send(embed=embed)
 
 
 async def _guilds(bot: Bot, dm_channel: discord.abc.Messageable) -> None:
@@ -66,13 +129,8 @@ async def _notify(bot: Bot, dm_channel: discord.abc.Messageable, user_msg: str) 
     await dm_channel.send(f'Notification sent to {count} users.')
 
 
-async def _sync(bot: Bot, tree: discord.app_commands.CommandTree, dm_channel: discord.abc.Messageable) -> None:
-    ts = time.time()
-    await dm_channel.send(f'Begin sync slash commands with {len(bot.guilds)} guilds.')
-    for guild in bot.guilds:
-        tree.copy_global_to(guild=guild)
-        await tree.sync(guild=guild)
-    await dm_channel.send(f'Slash commands synced with {len(bot.guilds)} guilds in {int(time.time() - ts)} secs.')
+async def _sync(bot: Bot, dm_channel: discord.abc.Messageable) -> None:
+    await dm_channel.send('Slash commands are no longer used (commands are prefix-based).')
 
 
 async def _channels(bot: Bot, dm_channel: discord.abc.Messageable) -> None:
@@ -146,27 +204,3 @@ def _is_dm_channel_message(bot: Bot, message: discord.Message) -> bool:
     if bot_owner is None:
         return False
     return bot_owner.id == message.author.id
-
-
-async def _track(bot: Bot, message: discord.Message, channel_state: ChannelState) -> None:
-    mvp = _get_mvp(message.content)
-    user_time = _get_user_time(message.content)
-    await channel_service.track_by_message(bot, message, channel_state, mvp, user_time)
-
-
-def _get_mvp(msg: str) -> str:
-    parts = msg.split(' ')
-    if len(parts) > 1:
-        last = parts[1]
-        if last.isnumeric() and len(last) == 4:
-            return parts[0]
-    return msg
-
-
-def _get_user_time(msg: str) -> str | None:
-    parts = msg.split(' ')
-    if len(parts) > 1:
-        last = parts[1]
-        if last.isnumeric() and len(last) == 4:
-            return parts[1]
-    return None

@@ -19,6 +19,8 @@ log = logging.getLogger(__name__)
 
 TABLE_MAX_ROWS = 20
 
+HELP_EMBED_TITLE = ':book: Como usar'
+
 
 def get_guild_from_bot(bot: Bot, id_guild: int) -> discord.Guild | None:
     return next((x for x in bot.guilds if x.id == id_guild), None)
@@ -230,7 +232,7 @@ async def update_track_time(
 
 def _fmt_track_reply(entry_state, user_time: str) -> str:
     msg = entry_state.entry.name
-    msg += ' (' + entry_state.entry.map + ')'
+    msg += ' (' + entry_state.entry.display_map + ')'
     msg += ' in '
     msg += track_util.fmt_r1_r2(int(entry_state.r1))
     msg += ' to '
@@ -254,12 +256,73 @@ async def init_channel(bot: Bot, channel_state: ChannelState) -> None:
     if validate_channel(bot, channel) is not None:
         return
     channel_state.id_message = None
+    channel_state.id_help_message = None
+    help_msg = None
+    table_msg = None
     async for msg in channel.history():
-        if msg.type == discord.MessageType.default and msg.author == bot.user and channel_state.id_message is None:
-            channel_state.id_message = msg.id
-            await update_channel_message(bot, channel_state)
+        if msg.type != discord.MessageType.default or msg.author != bot.user:
+            continue
+        embed_title = msg.embeds[0].title if len(msg.embeds) > 0 else None
+        if embed_title == HELP_EMBED_TITLE and help_msg is None:
+            help_msg = msg
+        elif embed_title == ':crown: MVPs' and table_msg is None:
+            table_msg = msg
+        if help_msg is not None and table_msg is not None:
             break
+    if table_msg is not None and (help_msg is None or help_msg.created_at > table_msg.created_at):
+        # Table exists but the help message is missing or came after it:
+        # remove the table and send help first, then a fresh table.
+        try:
+            await run_coro(table_msg.delete())
+        except discord.DiscordException:
+            log.error('Unexpected error deleting out-of-order table message.', exc_info=True)
+        table_msg = None
+    if help_msg is None:
+        await send_help_message(bot, channel_state)
+    else:
+        channel_state.id_help_message = help_msg.id
+    if table_msg is not None:
+        channel_state.id_message = table_msg.id
+    await update_channel_message(bot, channel_state)
     await delete_msgs(bot, channel_state, channel)
+
+
+def get_help_description(prefix: str) -> str:
+    p = prefix
+    return (
+        'Adicione um MVP à lista usando o botão **➕ TRACK MVP** '
+        'ou digitando no chat:\n'
+        f'> `{p} track <nome> [minutos atrás]`\n'
+        '\n'
+        '**Exemplos:**\n'
+        f'> `{p} track Serpente Suprema 20`\n'
+        f'> `{p} track` — mostra todos os comandos\n'
+        '\n'
+        '**Outros comandos:**\n'
+        f'- `{p} settings` — tempos de spawn e timezone\n'
+        f'- `{p} woe` — horários da WoE\n'
+        f'- `{p} clean` — limpa o canal\n'
+        f'- `{p} setmvpchannel` / `{p} unsetmvpchannel` — canal de notificação\n'
+        '\n'
+        f':warning: Só mensagens que começam com `{p}` são processadas. '
+        'As demais são apagadas automaticamente.'
+    )
+
+
+async def send_help_message(bot: Bot, channel_state: ChannelState) -> None:
+    channel = get_channel_from_bot(bot, channel_state.id_guild, channel_state.id_channel)
+    if channel is None:
+        return
+    if validate_channel(bot, channel) is not None:
+        return
+    embed = discord.Embed(
+        colour=discord.Colour.gold(),
+        title=HELP_EMBED_TITLE,
+        description=get_help_description(bot.settings.command_prefix),
+    )
+    message = await run_coro(channel.send(embed=embed))
+    if message is not None:
+        channel_state.id_help_message = message.id
 
 
 async def delete_msgs(bot: Bot, channel_state: ChannelState, channel: discord.TextChannel) -> None:
@@ -273,6 +336,8 @@ async def delete_msgs(bot: Bot, channel_state: ChannelState, channel: discord.Te
 
 def is_msg_can_be_deleted(bot: Bot, channel_state: ChannelState, msg: discord.Message) -> bool:
     if channel_state.id_message is not None and channel_state.id_message == msg.id:
+        return False
+    if channel_state.id_help_message is not None and channel_state.id_help_message == msg.id:
         return False
     if datetime.utcnow() - msg.created_at.replace(tzinfo=None) >= timedelta(days=14):
         return False
@@ -292,6 +357,8 @@ async def set_channel(bot: Bot, channel: discord.TextChannel, type: TrackType) -
     )
     guild_state.channel_states[channel.id] = channel_state
     await init_channel(bot, channel_state)
+    if channel_state.id_message is None:
+        await send_help_message(bot, channel_state)
     await update_channel_message(bot, channel_state)
     conn = await bot.pool_acquire()
     try:
@@ -301,33 +368,33 @@ async def set_channel(bot: Bot, channel: discord.TextChannel, type: TrackType) -
         await bot.pool_release(conn)
 
 
-async def unset_channel(bot: Bot, interaction: discord.Interaction, trackType: TrackType) -> None:
-    validate_msg = validate_channel(bot, interaction.channel)
+async def unset_channel(bot: Bot, channel: discord.TextChannel, trackType: TrackType) -> None:
+    validate_msg = validate_channel(bot, channel)
     if validate_msg is not None:
-        await run_coro(interaction.response.send_message(validate_msg))
+        await run_coro(channel.send(validate_msg))
         return
-    guild_state = bot.guild_states[interaction.guild_id]
+    guild_state = bot.guild_states[channel.guild.id]
     channel_state = guild_state.get_channel_state(trackType)
     if channel_state is None:
-        await run_coro(interaction.response.send_message(f'There is no {trackType.desc} channel set.'))
+        await run_coro(channel.send(f'There is no {trackType.desc} channel set.'))
         return
     del guild_state.channel_states[channel_state.id_channel]
     conn = await bot.pool_acquire()
     try:
         sql = f'UPDATE guild SET id_{trackType.sql_desc}_channel=NULL WHERE id=$1'
-        await conn.execute(sql, interaction.guild_id)
+        await conn.execute(sql, channel.guild.id)
     finally:
         await bot.pool_release(conn)
-    await run_coro(interaction.response.send_message(trackType.desc + ' channel unset.'))
+    await run_coro(channel.send(trackType.desc + ' channel unset.'))
 
 
-async def confirm_set_channel(bot: Bot, interaction: discord.Interaction, trackType: TrackType) -> None:
-    validate_msg = validate_channel(bot, interaction.channel)
+async def confirm_set_channel(bot: Bot, channel: discord.TextChannel, trackType: TrackType) -> None:
+    validate_msg = validate_channel(bot, channel)
     if validate_msg is not None:
-        await run_coro(interaction.response.send_message(validate_msg))
+        await run_coro(channel.send(validate_msg))
         return
     await run_coro(
-        interaction.response.send_message(
+        channel.send(
             'This will remove all messages from this channel. Are you sure?',
             view=SetChannelView(bot=bot, trackType=trackType),
         )
@@ -363,10 +430,12 @@ async def update_channel_message(bot: Bot, channel_state: ChannelState) -> None:
             remaining_time += ' to ' + track_util.fmt_r1_r2(int(entry_state.r2))
             remaining_time += ' mins'
             if mobile:
-                names.append(entry_state.entry.name + ' (' + entry_state.entry.map + ')' + ' | ' + remaining_time)
+                names.append(
+                    entry_state.entry.name + ' (' + entry_state.entry.display_map + ')' + ' | ' + remaining_time
+                )
             else:
                 names.append(entry_state.entry.name)
-                maps.append(entry_state.entry.map)
+                maps.append(entry_state.entry.display_map)
                 remaining_times.append(remaining_time)
             active_entry_states.append(entry_state)
         else:
@@ -407,7 +476,7 @@ async def update_channel_message(bot: Bot, channel_state: ChannelState) -> None:
                 result += '\n'
             result += f'[<t:{int(time.mktime(entry_log.date.astimezone(tz=local_tz).timetuple()))}:R>]'
             result += ' ' + entry_log.entry.name
-            result += ' (' + entry_log.entry.map + ')'
+            result += ' (' + entry_log.entry.display_map + ')'
             result += ' by <@' + str(entry_log.id_user) + '>'
         embed.add_field(name='Track Log', value=result, inline=False)
 
@@ -481,7 +550,9 @@ class TrackSelect(discord.ui.Select):
         self.opts = opts
         self.mins_ago = mins_ago
         self.user_time = user_time
-        options = [discord.SelectOption(label=opt.name, description=opt.map, value=str(opt.id)) for opt in self.opts]
+        options = [
+            discord.SelectOption(label=opt.name, description=opt.display_map, value=str(opt.id)) for opt in self.opts
+        ]
         super().__init__(placeholder='Select an option', options=options)
 
     async def callback(self, interaction: discord.Interaction):

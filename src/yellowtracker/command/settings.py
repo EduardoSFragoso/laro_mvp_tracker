@@ -9,12 +9,13 @@ from yellowtracker.service import channel_service
 from yellowtracker.util.coroutine_util import run_coro
 
 
-async def settings_cmd(interaction: discord.Interaction, bot: Bot) -> None:
-    guild = interaction.guild
+async def settings_core(bot: Bot, message: discord.Message) -> None:
+    guild = message.guild
     if guild is None:
-        await interaction.response.defer()
         return
-    guild_state = bot.guild_states[guild.id]
+    guild_state = bot.get_guild_state(guild.id)
+    if guild_state is None:
+        return
     mvp_channel_state = guild_state.get_channel_state(TrackType.MVP)
     mvp_channel = (
         channel_service.get_channel_from_guild(guild, mvp_channel_state.id_channel)
@@ -25,4 +26,4 @@ async def settings_cmd(interaction: discord.Interaction, bot: Bot) -> None:
     msg += f'Mobile Layout: {Emoji.YES.value if guild_state.mobile else Emoji.NO.value}\n'
     msg += f'MVP Channel: {"" if mvp_channel is None else mvp_channel.mention}\n'
     msg += f'Timezone: {"" if guild_state.timezone is None else guild_state.timezone}'
-    await run_coro(interaction.response.send_message(msg))
+    await run_coro(message.channel.send(msg))

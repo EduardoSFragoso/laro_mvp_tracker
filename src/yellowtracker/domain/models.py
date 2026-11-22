@@ -19,7 +19,13 @@ class Mvp:
     t1custom: int | None = None
     t2custom: int | None = None
     id_mob: int | None = None
+    navi: str | None = None  # kRO map code shown to the user (e.g. gon_dun03)
     alias: list[str] = field(default_factory=list)
+
+    @property
+    def display_map(self) -> str:
+        """The map as shown to the user: the navi code when known, else the map name."""
+        return self.navi if self.navi is not None else self.map
 
 
 @dataclass
@@ -51,6 +57,7 @@ class ChannelState:
     id_guild: int
     type: TrackType
     id_message: int | None = None
+    id_help_message: int | None = None
     entry_states: list[TrackEntryState] = field(default_factory=list)
     entry_logs: deque[EntryLog] = field(default_factory=deque)
 

@@ -7,5 +7,5 @@ from yellowtracker.domain.track_type import TrackType
 from yellowtracker.service import channel_service
 
 
-async def unsetmvpchannel(interaction: discord.Interaction, bot: Bot) -> None:
-    await channel_service.unset_channel(bot, interaction, TrackType.MVP)
+async def unsetmvpchannel_core(bot: Bot, message: discord.Message) -> None:
+    await channel_service.unset_channel(bot, message.channel, TrackType.MVP)

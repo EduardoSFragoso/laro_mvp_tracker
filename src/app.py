@@ -4,19 +4,7 @@ import asyncio
 import logging
 
 import discord
-from discord import app_commands
 
-from yellowtracker.command import (
-    clean,
-    # custom,  # /custom desligado no LATAM (ver docs/decisoes.md)
-    set_mvp_channel,
-    settings,
-    track,
-    unset_mvp_channel,
-    unsettimezone,
-    woe,
-)
-from yellowtracker.command.timezone import timezone_cmd
 from yellowtracker.config import load_settings
 from yellowtracker.domain.bot import Bot
 from yellowtracker.domain.exceptions import BotConfigurationError
@@ -24,7 +12,6 @@ from yellowtracker.event.on_guild_join import on_guild_join as on_guild_join_evt
 from yellowtracker.event.on_guild_remove import on_guild_remove as on_guild_remove_evt
 from yellowtracker.event.on_message import on_message as on_message_evt
 from yellowtracker.event.on_ready import on_ready as on_ready_evt
-from yellowtracker.service import entry_service
 
 
 log = logging.getLogger(__name__)
@@ -38,95 +25,19 @@ intents.message_content = True
 bot = Bot(settings_cfg, intents=intents)
 
 
-class LaroCommandTree(discord.app_commands.CommandTree):
-    """Reject interactions that arrive before the runtime state is loaded."""
-
-    def __init__(self, bot: Bot):
-        super().__init__(bot)
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if not bot.tracker_ready:
-            await interaction.response.send_message('Bot is still starting up, try again in a moment.', ephemeral=True)
-            return False
-        return True
-
-
-tree = LaroCommandTree(bot)
-
-
-@tree.command(name='clean', description='Remove all tracked MVPs from the list')
-async def _clean(interaction: discord.Interaction):
-    await clean.clean(interaction, bot)
-
-
-# /custom desligado no LATAM: MVPs não têm tempos custom cadastrados (o padrão
-# do schema já cobre). Reativar: descomentar e importar yellowtracker.command.custom.
-# @tree.command(name='custom', description='Enable/disable custom MVP respawn times')
-# async def _custom(interaction: discord.Interaction):
-#     await custom.custom_cmd(interaction, bot)
-
-
-@tree.command(name='timezone', description='Define a custom timezone for MVP tracking')
-async def _timezone(interaction: discord.Interaction, timezone: str):
-    await timezone_cmd(interaction, bot, timezone)
-
-
-@tree.command(name='unsettimezone', description='Undo custom timezone definition')
-async def _unsettimezone(interaction: discord.Interaction):
-    await unsettimezone.unsettimezone_cmd(interaction, bot)
-
-
-# /mobile desligado no LATAM (feature antiga do server original).
-# Reativar: descomentar e importar yellowtracker.command.mobile.
-# @tree.command(name='mobile', description='Enable/disable MVP list mobile layout')
-# async def _mobile(interaction: discord.Interaction):
-#     await mobile.mobile(interaction, bot)
-
-
-@tree.command(name='setmvpchannel', description='Define a channel to track MVPs')
-async def _setmvpchannel(interaction: discord.Interaction):
-    await set_mvp_channel.setmvpchannel(interaction, bot)
-
-
-@tree.command(name='settings', description='Show bot settings')
-async def _settings(interaction: discord.Interaction):
-    await settings.settings_cmd(interaction, bot)
-
-
-async def _track_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
-    return [discord.app_commands.Choice(name=name, value=name) for name, _map in entry_service.ac_entries(bot, current)]
-
-
-@tree.command(name='track', description='Track a MVP that has been defeated')
-@app_commands.describe(mvp='MVP name (pt-BR) or alias', time='Time of death in HHMM, defaults to now')
-@app_commands.autocomplete(mvp=_track_autocomplete)
-async def _track(interaction: discord.Interaction, mvp: str, time: str = None):
-    await track.track(interaction, bot, mvp, time)
-
-
-@tree.command(name='unsetmvpchannel', description='Undo MVP track channel definition')
-async def _unsetmvpchannel(interaction: discord.Interaction):
-    await unset_mvp_channel.unsetmvpchannel(interaction, bot)
-
-
-@tree.command(name='woe', description='Show War of Emperium times')
-async def _woe(interaction: discord.Interaction):
-    await woe.woe(interaction, bot)
-
-
 @bot.event
 async def on_ready():
-    await on_ready_evt(bot, tree)
+    await on_ready_evt(bot)
 
 
 @bot.event
 async def on_message(message: discord.Message):
-    await on_message_evt(bot, tree, message)
+    await on_message_evt(bot, message)
 
 
 @bot.event
 async def on_guild_join(guild):
-    await on_guild_join_evt(guild, tree, bot)
+    await on_guild_join_evt(guild, bot)
 
 
 @bot.event

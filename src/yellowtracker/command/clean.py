@@ -9,19 +9,21 @@ from yellowtracker.service import channel_service
 from yellowtracker.util.coroutine_util import run_coro
 
 
-async def clean(interaction: discord.Interaction, bot: Bot) -> None:
-    validate_msg = channel_service.validate_channel(bot, interaction.channel)
+async def clean_core(bot: Bot, message: discord.Message) -> None:
+    validate_msg = channel_service.validate_channel(bot, message.channel)
     if validate_msg is not None:
-        await run_coro(interaction.response.send_message(validate_msg))
+        await run_coro(message.channel.send(validate_msg))
         return
-    guild_state = bot.guild_states[interaction.guild_id]
-    channel_state = guild_state.channel_states.get(interaction.channel_id)
+    guild_state = bot.get_guild_state(message.guild.id)
+    if guild_state is None:
+        return
+    channel_state = guild_state.channel_states.get(message.channel.id)
     if channel_state is None:
-        await run_coro(interaction.response.send_message('This command can only be used in a track channel.'))
+        await run_coro(message.channel.send('This command can only be used in a track channel.'))
         return
 
     await run_coro(
-        interaction.response.send_message(
+        message.channel.send(
             'This will clean the list. Are you sure?',
             view=CleanView(bot=bot, trackType=channel_state.type),
         )

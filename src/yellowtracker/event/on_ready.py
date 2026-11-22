@@ -4,26 +4,18 @@ import logging
 import os
 
 import asyncpg
-import discord
 
 from yellowtracker.domain.bot import Bot
 from yellowtracker.domain.models import ChannelState, GuildState, Mvp
 from yellowtracker.domain.track_type import TrackType
 from yellowtracker.service import channel_service, entry_service
-from yellowtracker.util.coroutine_util import run_coro
 
 
 log = logging.getLogger(__name__)
 
 
-async def on_ready(bot: Bot, tree: discord.app_commands.CommandTree) -> None:
+async def on_ready(bot: Bot) -> None:
     log.info(f'Connected as {bot.user} on {len(bot.guilds)} servers.')
-
-    if bot.settings.guild_id is not None:
-        log.info(f'Sync slash commands with guild id {bot.settings.guild_id}.')
-        guild_to_sync = discord.Object(id=bot.settings.guild_id)
-        tree.copy_global_to(guild=guild_to_sync)
-        await run_coro(tree.sync(guild=guild_to_sync))
 
     try:
         log.info('Create database pool.')

@@ -28,7 +28,7 @@ DEL_MSG_AFTER_SECS=time to delete a message in the track channel after its last 
 TABLE_ENTRY_EXPIRATION_MINS=time to remove an entry from the table after the max respawn window is reached (default = 20 minutes)
 TIMER_DELAY_SECS=bot timer delay in seconds (default = 5 seconds)
 TIMEZONE=timezone used for HH:MM datetimes (default = America/Sao_Paulo)
-GUILD_ID=a single guild ID to sync the slash commands (default = None)
+COMMAND_PREFIX=chat command prefix (default = !mvp)
 ```
 3. In a terminal, go to the `src` folder.
 4. Run `pip install -r requirements.txt` to install the dependencies.
@@ -63,30 +63,31 @@ psql "$DATABASE_URL" -f sql/seed_mvp_latam.sql
 
 ## Usage
 
-Define a channel in your Discord server to be used exclusively for MVP tracking (a brand-new channel is strongly recommended). Use the **/setmvpchannel** command. In this channel the bot keeps a table with the tracked MVPs and their remaining respawn times.
+Define a channel in your Discord server to be used exclusively for MVP tracking (a brand-new channel is strongly recommended). Use the **!mvp setmvpchannel** command. In this channel the bot keeps a help message and a table with the tracked MVPs and their remaining respawn times.
 
   - **WARNING**: after you use this command, **ALL** messages from the channel (if any) are erased irreversibly! Make sure you pick the right channel.
 
-Inside an MVP channel, there are three ways to track a MVP:
-- sending a message with the `MVP_NAME` or `MVP_NAME HHMM` syntax (requires the **Message Content** intent; accepts the Portuguese name or the English alias — e.g. `amon ra 1234`, `atroce`, `brinaranea 1512`);
-- pressing the **Track** button;
-- using the **/track** command.
+Inside an MVP channel, there are two ways to track a MVP:
+- typing **!mvp track MVP_NAME** or **!mvp track MVP_NAME HHMM** (requires the **Message Content** intent; accepts the Portuguese name or the English alias — e.g. `!mvp track amon ra 1234`, `!mvp track atroce`, `!mvp track brinaranea 1512`);
+- pressing the **➕ TRACK MVP** button (opens a form).
 
-A routine periodically cleans the MVP channel to keep only the MVP list message (requires the **Manage Channel** permission).
+Commands are **prefix-based messages** (default `!mvp`, configurable in `COMMAND_PREFIX`) — instead of slash commands — so they do not mix with the slash commands of other bots on the `/` list. The table shows the **kRO map code** (navi, e.g. `gon_dun03`) instead of the Portuguese map name. Only messages starting with the prefix are processed; anything else is deleted automatically by the channel cleaning routine (requires the **Manage Messages** permission).
 
 ### Bot commands:
 
 Command | Description
 ------- | ---------
-**/track** `name` `time` | Report that MVP `name` died. The optional `time` argument sets the exact time of death, in the `HHMM` format, relative to the configured timezone or a custom timezone set with `/timezone`.
-**/setmvpchannel** | Define the current channel as the MVP track channel.
-**/unsetmvpchannel** | Undo the MVP track channel definition.
-**/timezone** | Set a custom timezone for tracking when the time is given in `HH:MM` syntax.
-**/settings** | Show the current bot settings.
-**/clean** | Remove all tracked MVPs from the table (useful after a server reboot).
-**/woe** | Show the War of Emperium (WoE) schedule: every Sunday, 8 PM to 10 PM server time (UTC-3).
+**!mvp track** `name` `time` | Report that MVP `name` died. The optional `time` argument sets the exact time of death, in the `HHMM` format, relative to the configured timezone or a custom timezone set with **!mvp timezone**.
+**!mvp setmvpchannel** | Define the current channel as the MVP track channel.
+**!mvp unsetmvpchannel** | Undo the MVP track channel definition.
+**!mvp timezone** | Set a custom timezone for tracking when the time is given in `HHMM` syntax.
+**!mvp unsettimezone** | Remove the custom timezone.
+**!mvp settings** | Show the current bot settings.
+**!mvp clean** | Remove all tracked MVPs from the table (useful after a server reboot).
+**!mvp woe** | Show the War of Emperium (WoE) schedule: every Sunday, 8 PM to 10 PM server time (UTC-3).
+**!mvp** (or **!mvp help**) | Show the command list.
 
-> **Note:** the original project's `/custom`, `/mobile`, `/gmc` and `/hh` commands are disabled/stripped on LATAM — custom and mobile have no use on this server, and GMC and Happy Hour do not exist on LATAM.
+> **Note:** the `/track` etc. commands no longer exist as **slash commands**; the original project's `custom`, `mobile`, `/gmc` and `/hh` features remain disabled/stripped on LATAM — custom and mobile have no use on this server, and GMC and Happy Hour do not exist on LATAM.
 
 ## MVP list (LATAM)
 

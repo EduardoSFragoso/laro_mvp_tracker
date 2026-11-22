@@ -19,6 +19,7 @@ class Settings:
     table_entry_expiration_mins: int = 20
     timer_delay_secs: int = 5
     timezone: str = DEFAULT_TIMEZONE
+    command_prefix: str = '!mvp'
     guild_id: int | None = None
 
 
@@ -38,5 +39,6 @@ def load_settings(env_file: str | None = '.env') -> Settings:
         table_entry_expiration_mins=int_env('TABLE_ENTRY_EXPIRATION_MINS', 20),
         timer_delay_secs=int_env('TIMER_DELAY_SECS', 5),
         timezone=os.getenv('TIMEZONE', default=DEFAULT_TIMEZONE),
+        command_prefix=os.getenv('COMMAND_PREFIX', default='!mvp'),
         guild_id=int(guild_id_raw) if guild_id_raw is not None else None,
     )

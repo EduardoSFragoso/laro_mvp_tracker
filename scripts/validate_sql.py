@@ -62,7 +62,9 @@ def main() -> int:
         if table == 'mvp':
             mvps += 1
             row = list(vals.find_all(exp.Tuple))[0].expressions
-            name, map_, t1, t2, id_mob = [lit(e) for e in row]
+            name, map_, navi, t1, t2, id_mob = [lit(e) for e in row]
+            if len(row) != 6 or (navi is not None and not str(navi).strip()):
+                failures.append(f'navi ausente: {name} ({map_})')
             if t1 is None or t2 is None:
                 failures.append(f'mvp sem respawn: {name}')
             elif int(t1) > int(t2):

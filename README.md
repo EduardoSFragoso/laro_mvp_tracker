@@ -28,7 +28,7 @@ DEL_MSG_AFTER_SECS=tempo de exclusão de mensagem no canal de rastreio após a �
 TABLE_ENTRY_EXPIRATION_MINS=tempo para remover a entrada da tabela após alcance máximo de respawn (padrão = 20 minutos)
 TIMER_DELAY_SECS=atraso do timer do bot em segundos (padrão = 5 segundos)
 TIMEZONE=timezone usada para horários em formato HH:MM (padrão = America/Sao_Paulo)
-GUILD_ID=ID de um único servidor para sincronizar os slash commands (padrão = None)
+COMMAND_PREFIX=prefixo dos comandos do bot no chat (padrão = !mvp)
 ```
 3. Em um terminal, vá até a pasta `src`.
 4. Execute `pip install -r requirements.txt` para instalar as dependências.
@@ -63,30 +63,31 @@ psql "$DATABASE_URL" -f sql/seed_mvp_latam.sql
 
 ## Como usar
 
-Defina um canal do seu servidor do Discord para ser usado exclusivamente no rastreamento de MVPs (recomendado um canal novo para isso). Use o comando **/setmvpchannel**. Nesse canal o bot mantém uma tabela com os MVPs rastreados e os tempos restantes para o respawn.
+Defina um canal do seu servidor do Discord para ser usado exclusivamente no rastreamento de MVPs (recomendado um canal novo para isso). Use o comando **!mvp setmvpchannel**. Nesse canal o bot mantém uma mensagem de instruções e uma tabela com os MVPs rastreados e os tempos restantes para o respawn.
 
   - **ATENÇÃO**: ao usar esse comando, **TODAS** as mensagens do canal (se houver) serão apagadas de forma irreversível! Escolha o canal certo.
 
-Dentro de um canal de MVPs, há três formas de rastrear:
-- enviando uma mensagem com a sintaxe `NOME_DO_MVP` ou `NOME_DO_MVP HHMM` (requer permissão **Message Content**; aceita nome em português ou apelido em inglês — ex.: `amon ra 1234`, `atroce`, `brinaranea 1512`);
-- pressionando o botão **Track**;
-- usando o comando **/track**.
+Dentro de um canal de MVPs, há duas formas de rastrear:
+- digitando **!mvp track NOME_DE_MVP** ou **!mvp track NOME_DE_MVP HHMM** (requer permissão **Message Content**; aceita nome em português ou apelido em inglês — ex.: `!mvp track amon ra 1234`, `!mvp track atroce`, `!mvp track brinaranea 1512`);
+- pressionando o botão **➕ TRACK MVP** (abre um formulário no Discord).
 
-Há uma rotina que limpa o canal periodicamente, mantendo apenas a mensagem da lista de MVPs (requer permissão **Manage Channel**).
+Os comandos são **mensagens com prefixo** (padrão `!mvp`, configurável em `COMMAND_PREFIX`) — em vez de slash commands — para não aparecer misturados aos comandos de outros bots na lista `/`. A tabela exibe o **código kRO do mapa** (navi, ex.: `gon_dun03`) em vez do nome em português. Só mensagens que começam com o prefixo são processadas; as demais são apagadas automaticamente pela rotina de limpeza do canal (requer permissão **Manage Messages**).
 
 ### Comandos do bot:
 
 Comando | Descrição
 ------- | ---------
-**/track** `nome` `hora` | Registra que o MVP `nome` morreu. O argumento `hora` determina o horário exato da morte, no formato `HHMM`, relativo à timezone configurada ou a uma timezone customizada definida com `/timezone`.
-**/setmvpchannel** | Define o canal atual como canal de rastreio de MVPs.
-**/unsetmvpchannel** | Cancela o canal de rastreio de MVPs.
-**/timezone** | Define uma timezone customizada para o rastreio quando o horário é informado via `HH:MM`.
-**/settings** | Mostra as configurações atuais do bot.
-**/clean** | Remove todos os MVPs rastreados da tabela (útil após reinícios do servidor).
-**/woe** | Mostra o horário da Guerra do Emperium (WoE): todo domingo, das 20h às 22h (horário do servidor, UTC-3).
+**!mvp track** `nome` `hora` | Registra que o MVP `nome` morreu. O argumento `hora` determina o horário exato da morte, no formato `HHMM`, relativo à timezone configurada ou a uma timezone customizada definida com **!mvp timezone**.
+**!mvp setmvpchannel** | Define o canal atual como canal de rastreio de MVPs.
+**!mvp unsetmvpchannel** | Cancela o canal de rastreio de MVPs.
+**!mvp timezone** | Define uma timezone customizada para o rastreio quando o horário é informado via `HHMM`.
+**!mvp unsettimezone** | Remove a timezone customizada.
+**!mvp settings** | Mostra as configurações atuais do bot.
+**!mvp clean** | Remove todos os MVPs rastreados da tabela (útil após reinícios do servidor).
+**!mvp woe** | Mostra o horário da Guerra do Emperium (WoE): todo domingo, das 20h às 22h (horário do servidor, UTC-3).
+**!mvp** (ou **!mvp help**) | Mostra a lista de comandos.
 
-> **Nota:** os comandos `/custom`, `/mobile`, `/gmc` e `/hh` do projeto original estão desativados/sem código no LATAM — custom e mobile não têm uso no servidor, e GMC e Happy Hour não existem no LATAM.
+> **Nota:** os comandos `/track` etc. deixaram de existir como **slash commands**; `custom`, `mobile`, `/gmc` e `/hh` do projeto original seguem desativados/sem código no LATAM — custom e mobile não têm uso no servidor, e GMC e Happy Hour não existem no LATAM.
 
 ## Lista de MVPs (LATAM)
 
