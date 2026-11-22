@@ -93,7 +93,7 @@ async def _settings(interaction: discord.Interaction):
     await settings.settings_cmd(interaction, bot)
 
 
-def _track_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
+async def _track_autocomplete(interaction: discord.Interaction, current: str) -> list[discord.app_commands.Choice[str]]:
     return [discord.app_commands.Choice(name=name, value=name) for name, _map in entry_service.ac_entries(bot, current)]
 
 
