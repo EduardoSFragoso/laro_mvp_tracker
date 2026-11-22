@@ -47,6 +47,7 @@ class TrackEntryState:
     t2: int = -999
     r1: int = -999
     r2: int = -999
+    notified: bool = False  # window-open notification already sent
 
 
 @dataclass
@@ -71,6 +72,7 @@ class GuildState:
     mobile: bool = False
     timezone: str | None = None
     id_mvp_channel: int | None = None
+    id_notification_role: int | None = None
     channel_states: dict[int, ChannelState] = field(default_factory=dict)
 
     def get_channel_state(self, type: TrackType) -> ChannelState | None:

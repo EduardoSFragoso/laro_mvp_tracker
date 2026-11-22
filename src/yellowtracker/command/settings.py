@@ -22,8 +22,12 @@ async def settings_core(bot: Bot, message: discord.Message) -> None:
         if mvp_channel_state is not None
         else None
     )
+    notification_role = None
+    if guild_state.id_notification_role is not None:
+        notification_role = guild.get_role(guild_state.id_notification_role)
     msg = f'Custom MVP Times: {Emoji.YES.value if guild_state.custom else Emoji.NO.value}\n'
     msg += f'Mobile Layout: {Emoji.YES.value if guild_state.mobile else Emoji.NO.value}\n'
     msg += f'MVP Channel: {"" if mvp_channel is None else mvp_channel.mention}\n'
+    msg += f'Notification Role: {"" if notification_role is None else notification_role.mention}\n'
     msg += f'Timezone: {"" if guild_state.timezone is None else guild_state.timezone}'
     await run_coro(message.channel.send(msg))

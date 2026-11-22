@@ -63,6 +63,7 @@ async def load_database(bot: Bot, conn) -> None:
             guild_state.mobile = db_guild['mobile']
             guild_state.timezone = db_guild['timezone']
             guild_state.id_mvp_channel = db_guild['id_mvp_channel']
+            guild_state.id_notification_role = db_guild['id_notification_role']
             if guild_state.id_mvp_channel is not None:
                 guild_state.channel_states[guild_state.id_mvp_channel] = ChannelState(
                     id_channel=guild_state.id_mvp_channel,

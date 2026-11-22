@@ -32,6 +32,7 @@ CREATE TABLE guild (
     mobile boolean NOT NULL DEFAULT FALSE,
     timezone text,
     id_mvp_channel bigint,
+    id_notification_role bigint,
     CONSTRAINT guild_pk PRIMARY KEY (id)
 );
 

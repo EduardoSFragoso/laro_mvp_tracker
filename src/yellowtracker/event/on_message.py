@@ -6,6 +6,7 @@ import discord
 
 from yellowtracker.command import clean, settings, timezone, unset_mvp_channel, unsettimezone, woe
 from yellowtracker.command.set_mvp_channel import setmvpchannel_core
+from yellowtracker.command.setpingrole import setpingrole_core, unsetpingrole_core
 from yellowtracker.command.track import track_core
 from yellowtracker.domain.bot import Bot
 from yellowtracker.service import channel_service
@@ -70,6 +71,10 @@ async def _dispatch_cmd(bot: Bot, message: discord.Message) -> None:
         await setmvpchannel_core(bot, message)
     elif sub == 'unsetmvpchannel':
         await unset_mvp_channel.unsetmvpchannel_core(bot, message)
+    elif sub == 'setpingrole':
+        await setpingrole_core(bot, message)
+    elif sub == 'unsetpingrole':
+        await unsetpingrole_core(bot, message)
     else:
         # Com um prefixo curto (ex.: '!'), mensagens de outros bots/usuarios que
         # coincidam nao devem gerar ruido: sinaliza desconhecido so no canal de track.
