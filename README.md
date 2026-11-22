@@ -1,5 +1,7 @@
 # Yellow Tracker (Ragnarok Online LATAM)
 
+[English](README.en.md) | Português
+
 Yellow Tracker é um bot do Discord para rastrear MVPs, adaptado para o servidor **Ragnarok Online LATAM** (servidor oficial da Gravity/GNJOY LATAM).
 
 Baseado no [yellowtracker original](https://github.com/victorgawk/yellowtracker), refatorado (dataclasses, settings via env, services como módulos) e com a lista de MVPs, tempos de respawn e eventos atualizados para o LATAM.
@@ -57,7 +59,7 @@ Defina um canal do seu servidor do Discord para ser usado exclusivamente no rast
 Dentro de um canal de MVPs, há três formas de rastrear:
 - enviando uma mensagem com a sintaxe `NOME_DO_MVP` ou `NOME_DO_MVP HHMM` (requer permissão **Message Content**; aceita nome em português ou apelido em inglês — ex.: `amon ra 1234`, `atroce`, `brinaranea 1512`);
 - pressionando o botão **Track**;
-- usando o comando **/track** (completação automática por nome, apelido e mapa).
+- usando o comando **/track**.
 
 Há uma rotina que limpa o canal periodicamente, mantendo apenas a mensagem da lista de MVPs (requer permissão **Manage Channel**).
 
