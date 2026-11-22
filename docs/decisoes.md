@@ -53,7 +53,13 @@ Um documento de padrões (`AGENTS.md`, não versionado no repo) guiou o último 
 
 - Dois READMEs: `README.md` (pt-BR, padrão) e `README.en.md` (inglês), com links cruzados
 
+## Ambiente local (Docker)
+
+- `docker-compose.yml` (raiz) refeito: serviço `db` (postgres:16, aplica `sql/yellowtracker.sql` + `sql/seed_mvp_latam.sql` na primeira subida; volume `laro_pgdata` persiste, `down -v` recomeça do zero) + serviço `bot` (build do `Dockerfile`, `depends_on` com healthcheck do Postgres)
+- `.env.example` na raiz lista todas as variáveis carregadas por `src/yellowtracker/config.py`
+- Removido o `postgres/docker-compose.yml` genérico antigo (substituído pelo serviço `db`); o `docker.env` original deu lugar ao `.env` da raiz
+
 ## Pendências (não bloqueiam o repo)
 
-1. `.env` real (token do bot + `DATABASE_URL`) para smoke test com Discord + Postgres
-2. Validação do SQL num Postgres de verdade (a validação atual é estática, via `scripts/validate_sql.py` + sqlglot; o Docker Desktop estava desligado no momento)
+1. `.env` real (token do bot + `DATABASE_URL`) para smoke test com Discord + Postgres — o modelo `.env.example` da raiz já lista as variáveis e o `docker-compose.yml` sobe Postgres + bot
+2. Validação do SQL num Postgres de verdade (a validação atual é estática, via `scripts/validate_sql.py` + sqlglot): basta `docker compose up -d db` — na primeira subida o Postgres aplica `sql/yellowtracker.sql` + `sql/seed_mvp_latam.sql` sozinho (excluindo o legado `gmctokens.sql`)

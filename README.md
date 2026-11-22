@@ -15,7 +15,7 @@ Pré-requisitos:
 - Um banco de dados PostgreSQL
 
 1. No PostgreSQL, use o conteúdo do arquivo `sql/yellowtracker.sql` para criar a estrutura inicial do banco (tabelas + lista de MVPs do LATAM).
-2. Na pasta `src`, crie um arquivo `.env` com as variáveis:
+2. Use o [`.env.example`](.env.example) da raiz como modelo e crie um arquivo `.env` com as variáveis:
 ```properties
 # OBRIGATÓRIAS (o bot falha ao iniciar sem elas)
 
@@ -33,6 +33,16 @@ GUILD_ID=ID de um único servidor para sincronizar os slash commands (padrão = 
 3. Em um terminal, vá até a pasta `src`.
 4. Execute `pip install -r requirements.txt` para instalar as dependências.
 5. Execute `python app.py` para iniciar o bot.
+
+## Rodar com Docker Compose
+
+A raiz tem um `docker-compose.yml` que sobe **Postgres (com schema + seed LATAM aplicados automaticamente) e o bot**:
+
+1. Copie `.env.example` para `.env` na raiz e preencha ao menos `BOT_USER_TOKEN` (a `DATABASE_URL` é sobrescrita pelo compose para apontar ao serviço `db`).
+2. `docker compose up --build`
+
+O volume `laro_pgdata` persiste os dados; para recomeçar do zero, `docker compose down -v` (na próxima subida o SQL é aplicado de novo).
+Para usar só o Postgres e rodar o bot localmente (a partir de `src`, com `python app.py`): `docker compose up -d db` — nesse caso use `postgres://postgres:postgres@localhost:5432/laro` na `DATABASE_URL`.
 
 ## Atualizando um banco já existente
 
@@ -161,4 +171,4 @@ python scripts/validate_sql.py  # valida sintaxe e contagens do SQL (requer sqlg
 
 ## Deploy no Fly.io
 
-O projeto mantém os arquivos `fly.toml` e `docker-compose.yml`/`Dockerfile` originais. No Docker, configure o `docker.env` com `BOT_USER_TOKEN` e `DATABASE_URL`.
+O projeto mantém o `fly.toml` e o `Dockerfile` originais. O `docker-compose.yml` atual sobe Postgres + bot pela raiz, configurados pelo `.env` (modelo: `.env.example`).

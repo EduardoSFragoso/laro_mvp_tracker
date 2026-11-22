@@ -15,7 +15,7 @@ Prerequisites:
 - A PostgreSQL database
 
 1. In the PostgreSQL database, use the content from `sql/yellowtracker.sql` to create the initial database structure (tables + the LATAM MVP list).
-2. In the `src` folder, create a `.env` file with the following variables:
+2. Use the root [`.env.example`](.env.example) as a template and create a `.env` file with the following variables:
 ```properties
 # REQUIRED (the bot fails to start without them)
 
@@ -33,6 +33,16 @@ GUILD_ID=a single guild ID to sync the slash commands (default = None)
 3. In a terminal, go to the `src` folder.
 4. Run `pip install -r requirements.txt` to install the dependencies.
 5. Run `python app.py` to start the bot.
+
+## Run with Docker Compose
+
+The repo root has a `docker-compose.yml` that brings up **Postgres (with the schema + LATAM seed applied automatically) and the bot**:
+
+1. Copy `.env.example` to `.env` in the root and fill in at least `BOT_USER_TOKEN` (the compose overrides `DATABASE_URL` to point at the `db` service).
+2. `docker compose up --build`
+
+The `laro_pgdata` volume persists the data; to start over, `docker compose down -v` (the SQL is applied again on the next start).
+To run only Postgres and start the bot locally (from `src`, with `python app.py`): `docker compose up -d db` — in that case use `postgres://postgres:postgres@localhost:5432/laro` as the `DATABASE_URL`.
 
 ## Upgrading an existing database
 
@@ -161,4 +171,4 @@ python scripts/validate_sql.py  # validates the SQL syntax and seed counts (requ
 
 ## Fly.io deploy
 
-The project keeps the original `fly.toml` and `docker-compose.yml`/`Dockerfile` files. With Docker, configure `docker.env` with `BOT_USER_TOKEN` and `DATABASE_URL`.
+The project keeps the original `fly.toml` and `Dockerfile`. The current root `docker-compose.yml` brings up Postgres + the bot, configured by the root `.env` (template: `.env.example`).

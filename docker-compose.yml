@@ -1,7 +1,41 @@
-version: "3.9"
+name: laro-mvp-tracker
 
 services:
-    yellowtracker:
+    db:
+        image: postgres:16
+        container_name: laro-db
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_DB: laro
+        ports:
+            - '5432:5432'
+        volumes:
+            - laro_pgdata:/var/lib/postgresql/data
+            # O entrypoint do postgres aplica os scripts em ordem alfabética
+            # na primeira subida (volume vazio): schema + seed LATAM.
+            # O gmctokens.sql é legado e é intencionalmente ignorado.
+            - ./sql/yellowtracker.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+            - ./sql/seed_mvp_latam.sql:/docker-entrypoint-initdb.d/02_reseed_mvp_latam.sql:ro
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U postgres -d laro']
+            interval: 5s
+            timeout: 3s
+            retries: 10
+
+    bot:
         build: .
+        container_name: laro-bot
+        restart: unless-stopped
+        depends_on:
+            db:
+                condition: service_healthy
         env_file:
-            - docker.env
+            - .env
+        environment:
+            # Sobrescreve a DATABASE_URL do .env: dentro do compose o host é db
+            DATABASE_URL: postgres://postgres:postgres@db:5432/laro
+
+volumes:
+    laro_pgdata:
