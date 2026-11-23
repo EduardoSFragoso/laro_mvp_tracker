@@ -27,8 +27,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: src/requirements.lock
-      - name: Instalar dependências (lockfile)
-        run: pip install -r src/requirements.lock ruff
+      - name: Instalar dependências (lockfile) + ferramentas de dev
+        run: pip install -r src/requirements.lock pytest ruff
       - name: Ruff check
         run: ruff check .
       - name: Ruff format
