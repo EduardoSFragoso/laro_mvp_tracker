@@ -35,6 +35,10 @@ services:
         depends_on:
             db:
                 condition: service_healthy
+        # Reinicia container unhealthy (processo vivo mas travado). Requer o
+        # servico 'autoheal' abaixo; crash comum ja cubre 'restart'.
+        labels:
+            - autoheal=true
         env_file:
             - .env
         environment:
@@ -52,6 +56,18 @@ services:
             timeout: 6s
             retries: 3
             start_period: 60s
+
+    autoheal:
+        # Vigia containers com label 'autoheal' e reinicia os que o healthcheck
+        # marcar como unhealthy (o Docker puro nao faz isso sozinho).
+        image: willfarrell/autoheal:latest
+        container_name: laro-autoheal
+        restart: unless-stopped
+        environment:
+            # Intervalo em que varre por containers unhealthy
+            AUTOHEAL_INTERVAL: '60'
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
     laro_pgdata:
