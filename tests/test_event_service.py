@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from laro.config import Settings
 from laro.service import event_service
 
@@ -7,6 +9,19 @@ def stub_bot(timezone='America/Sao_Paulo'):
         settings = Settings(bot_user_token=None, database_url=None, timezone=timezone)
 
     return StubBot()
+
+
+def sunday_night(hour=22, minute=30):
+    # Domingo 2026-11-22, depois do fim da WoE (20:00-22:00): o servidor
+    # não tem mais nenhum evento nesta semana, então o próximo deve ser o
+    # da semana seguinte (domingo 7 dias depois).
+    return datetime(2026, 11, 22, hour, minute)
+
+
+def localized(dt):
+    from pytz import timezone
+
+    return timezone('America/Sao_Paulo').localize(dt, is_dst=False)
 
 
 def test_get_evts_woe_returns_sorted_events():
@@ -34,6 +49,28 @@ def test_get_next_evt_returns_event():
     evt, ongoing = event_service.get_next_evt(bot, type='woe')
     assert evt is not None
     assert 'name' in evt and 'dt_begin' in evt and 'dt_end' in evt
+
+
+def test_get_next_evt_sunday_after_woe_finds_next_week():
+    # Bug de fim de semana: entre domingo 22:00 e 24:00 a WoE desta semana
+    # já terminou; o serviço congelado nesse horário precisa achar a WoE da
+    # semana seguinte em vez de responder vazio.
+    bot = stub_bot()
+    evt, ongoing = event_service.get_next_evt(bot, type='woe', dt_now=sunday_night())
+    assert evt is not None, 'deveria achar a WoE da semana seguinte'
+    assert ongoing is False
+    assert evt['dt_begin'] > localized(sunday_night())
+    assert evt['dt_begin'].isoweekday() == 7
+
+
+def test_get_next_evt_sunday_during_woe_is_ongoing():
+    # Domingo 21:00, dentro da janela: continua marcando como ongoing.
+    bot = stub_bot()
+    evt, ongoing = event_service.get_next_evt(bot, type='woe', dt_now=sunday_night(21, 0))
+    assert evt is not None
+    assert ongoing is True
+    assert localized(sunday_night(21, 0)) <= evt['dt_end']
+    assert evt['dt_begin'] <= localized(sunday_night(21, 0))
 
 
 def test_get_next_evt_unknown_type_returns_none():

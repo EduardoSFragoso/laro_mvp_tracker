@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import discord
 from pytz import timezone
@@ -68,9 +68,17 @@ def build_evt_embed(bot: Bot, emoji: str, title: str, evt_map: dict[str, str]) -
     return embed
 
 
-def get_next_evt(bot: Bot, type: str = None) -> tuple[dict | None, bool]:
-    dt_now = get_dt_now(bot.settings.timezone)
-    evts = get_evts(bot, type)
+def get_next_evt(bot: Bot, type: str = None, dt_now: datetime | None = None) -> tuple[dict | None, bool]:
+    """Next occurrence of the event type, plus whether it is ongoing now.
+
+    Tests inject dt_now to pin the clock; production omits it and uses now.
+    """
+    tzinfo = timezone(bot.settings.timezone)
+    if dt_now is None:
+        dt_now = get_dt_now(bot.settings.timezone)
+    elif dt_now.tzinfo is None:
+        dt_now = tzinfo.localize(dt_now, is_dst=False)
+    evts = get_evts(bot, type, dt_now=dt_now)
     next_evt = None
     ongoing = False
     for evt in evts:
@@ -108,16 +116,29 @@ def format_evt(bot: Bot, evt: dict) -> str:
     return result
 
 
-def get_evts(bot: Bot, type: str = None) -> list[dict]:
+def get_evts(bot: Bot, type: str = None, dt_now: datetime | None = None) -> list[dict]:
+    """Occurrences of the weekly events around dt_now (defaults to now).
+
+    An occurrence that already ended rolls forward one week, so the search
+    never comes back empty on the day the event just finished (e.g. the WoE
+    on Sunday night between 22:00 and 24:00).
+    """
+    if dt_now is None:
+        dt_now = get_dt_now(bot.settings.timezone)
+    elif dt_now.tzinfo is None:
+        dt_now = timezone(bot.settings.timezone).localize(dt_now, is_dst=False)
     tzinfo = timezone(bot.settings.timezone)
     result = []
     for evt in WeeklyEvent.DATA:
         if type is not None and evt['type'] != type:
             continue
-        dt_evt_begin = _weekly_evt_dt(bot, tzinfo, evt, 'begin')
-        dt_evt_end = _weekly_evt_dt(bot, tzinfo, evt, 'end')
+        dt_evt_begin = _weekly_evt_dt(bot, tzinfo, evt, 'begin', dt_now)
+        dt_evt_end = _weekly_evt_dt(bot, tzinfo, evt, 'end', dt_now)
         if dt_evt_end < dt_evt_begin:
             dt_evt_end += timedelta(days=1)
+        if dt_evt_end <= dt_now:
+            dt_evt_begin += timedelta(days=7)
+            dt_evt_end += timedelta(days=7)
         evtcp = dict(evt)
         evtcp['dt_begin'] = dt_evt_begin
         evtcp['dt_end'] = dt_evt_end
@@ -126,9 +147,9 @@ def get_evts(bot: Bot, type: str = None) -> list[dict]:
     return result
 
 
-def _weekly_evt_dt(bot: Bot, tzinfo, evt: dict, begin_or_end: str):
+def _weekly_evt_dt(bot: Bot, tzinfo, evt: dict, begin_or_end: str, dt_now: datetime):
     parts = evt[begin_or_end].split(':')
-    dt = get_dt_now(bot.settings.timezone).replace(
+    dt = dt_now.replace(
         hour=int(parts[0]),
         minute=int(parts[1]),
         second=0,
