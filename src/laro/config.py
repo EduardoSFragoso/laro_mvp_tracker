@@ -31,11 +31,13 @@ def load_settings(env_file: str | None = '.env') -> Settings:
     if env_file is not None:
         load_dotenv(env_file)
 
+    # Valores vazios ('' ou só espaços) voltam ao default; é o caso do
+    # GUILD_ID= do .env.example, que crashava o bot em deploy novo.
     def int_env(name: str, default: int) -> int:
-        raw = os.getenv(name, default=None)
-        return int(raw) if raw is not None else default
+        raw = (os.getenv(name) or '').strip()
+        return int(raw) if raw else default
 
-    guild_id_raw = os.getenv('GUILD_ID', default=None)
+    guild_id_raw = (os.getenv('GUILD_ID') or '').strip()
     return Settings(
         bot_user_token=os.getenv('BOT_USER_TOKEN'),
         database_url=os.getenv('DATABASE_URL'),
@@ -44,7 +46,7 @@ def load_settings(env_file: str | None = '.env') -> Settings:
         timer_delay_secs=int_env('TIMER_DELAY_SECS', 5),
         timezone=os.getenv('TIMEZONE', default=DEFAULT_TIMEZONE),
         command_prefix=os.getenv('COMMAND_PREFIX', default='!'),
-        guild_id=int(guild_id_raw) if guild_id_raw is not None else None,
+        guild_id=int(guild_id_raw) if guild_id_raw else None,
         health_port=int_env('HEALTH_PORT', 8080),
         heartbeat_url=os.getenv('HEARTBEAT_URL') or None,
         heartbeat_secs=int_env('HEARTBEAT_SECS', 60),
