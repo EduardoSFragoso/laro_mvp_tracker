@@ -17,7 +17,10 @@ Console Oracle Cloud → **Compute → Instances → Create Instance**.
 
 Não habilite rede pública extra no **Security List**: só a regra padrão de **SSH (22/TCP)**. O bot só faz **chamadas de saída** (Discord + Postgres local + heartbeat) — nenhuma porta de entrada é necessária.
 
-ARM nota: a imagem `python:3.13.7-alpine` do Dockerfile é multi-arch (funciona em aarch64), e `asyncpg`/`aiohttp` têm wheels musllinux aarch64.
+ARM nota: a base do Dockerfile (`python:*-alpine`) é multi-arch (builda em aarch64),
+mas os wheels de `asyncpg`/`aiohttp` para Python 3.15 aarch64 ainda não foram
+provados nesta VM. Se o `docker compose build` falhar por falta de wheel, voltar
+o Dockerfile para `python:3.14-alpine` e reabrir o PR de bump mais tarde.
 
 ## 2. Preparar o servidor
 
