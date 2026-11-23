@@ -50,7 +50,9 @@ Regras:
 
 - `DATABASE_URL` só no servidor, com `sslmode=require`.
 - A aplicação usa uma **role com privilégios mínimos**, nunca a dona do banco (`neondb_owner`). As migrações usam outra role.
-- Migrações versionadas (Alembic, Prisma Migrate, Flyway, node-pg-migrate etc.), testadas do zero na CI com um Postgres de serviço e aplicadas primeiro numa **branch do Neon** criada a partir da produção.
+- Migrações versionadas (Flyway ou Liquibase em Java, Alembic em Python, Prisma Migrate ou node-pg-migrate em Node), testadas do zero na CI com um Postgres de serviço e aplicadas primeiro numa **branch do Neon** criada a partir da produção.
+
+Em Java, a URL JDBC leva `sslmode=require` (`jdbc:postgresql://HOST/BANCO?sslmode=require`). Confira na documentação do Neon as recomendações do driver ao usar o pooler.
 
 Consultas de leitura, para rodar numa branch:
 
@@ -107,14 +109,73 @@ Boas práticas:
 - Validação de toda entrada e consultas parametrizadas (contra SQL injection).
 - Limite de requisições nas rotas sensíveis.
 - Logs sem dados pessoais (LGPD) e respostas de erro sem stack trace.
-- Dependências: `npm audit` ou `pip-audit`, com Dependabot ativo.
+- Dependências: `npm audit` (Node), `pip-audit` (Python) ou OWASP Dependency-Check (Java/Maven), com Dependabot ativo (suporta npm, pip, Maven e GitHub Actions).
+
+### Projetos Java (Spring Boot + Maven)
+
+**Pontos de atenção**
+
+- **Actuator:** em produção só o endpoint `health`; `management.endpoints.web.exposure.include=*` expõe `env`, `heapdump` e outros.
+- **Spring Security:** revise a `SecurityFilterChain`. Toda rota sensível exige autenticação, e a lista de `permitAll` deve ser curta. CSRF só pode ficar desligado em API sem sessão por cookie. Com cookies entre domínios, mantenha a proteção.
+- **CORS:** configure por `CorsConfigurationSource` com a origem do Pages. Nada de `@CrossOrigin("*")` nem `allowedOrigins("*")` junto com credenciais.
+- **Credenciais:** em `application*.properties` e `.yml` use placeholders (`${VARIAVEL}`), nunca valores. O perfil de produção lê tudo do ambiente da VM.
+- **SQL:** parâmetros nomeados ou `PreparedStatement`; nunca concatenar entrada do usuário.
+- **Logs:** `spring.jpa.show-sql` desligado em produção e sem dados pessoais.
+- **Build:** `target/` fora do Git.
+
+**Conexão com o Neon.** A connection string do Neon começa com `postgresql://usuario:senha@host/banco`, que o JDBC não aceita direto. No Spring Boot, separe em três variáveis de ambiente:
+
+```properties
+spring.datasource.url=jdbc:postgresql://${DB_HOST}/${DB_NAME}?sslmode=require
+spring.datasource.username=${DB_USER}
+spring.datasource.password=${DB_PASSWORD}
+```
+
+Para migrações com a role separada (privilégios maiores que os da aplicação), o Spring Boot permite credenciais próprias do Flyway:
+
+```properties
+spring.flyway.user=${DB_MIGRATION_USER}
+spring.flyway.password=${DB_MIGRATION_PASSWORD}
+```
+
+Confira na documentação do Neon as recomendações do driver ao usar o pooler.
+
+**Comandos de leitura**, na raiz do repositório:
+
+```bash
+grep -rEn 'management\.endpoints\.web\.exposure\.include|spring\.datasource\.password *=|password *=|secret *=' src/main/resources
+grep -rEn 'csrf|permitAll|anyRequest|authorizeHttpRequests' src/main
+grep -rEn '@CrossOrigin|allowedOrigins' src/main
+grep -rEn 'show[-_]sql' src/main/resources
+grep -rEn 'createStatement\(|"(SELECT|INSERT|UPDATE|DELETE) [^"]*" *\+' src/main
+./mvnw -q dependency:tree
+./mvnw versions:display-dependency-updates
+./mvnw org.owasp:dependency-check-maven:check
+```
+
+O Dependency-Check pode pedir uma chave de API da NVD para rodar rápido. O Dependabot (`maven`) abre os PRs de atualização, inclusive do Spring Boot.
+
+**Testes e CI**
+
+- `./mvnw verify` roda os testes e as verificações do build; é o comando da CI e o que se executa antes de concluir uma tarefa.
+- Testes de caracterização das rotas com JUnit 5 e `MockMvc` (ou `@SpringBootTest`); Postgres de teste via Testcontainers (no Spring Boot 3.1 ou superior, com `@ServiceConnection`) ou serviço da CI.
+- Na CI, instale o JDK da versão do projeto com cache do Maven:
+
+```yaml
+- uses: actions/setup-java@v5   # troque pela versão atual mantida pelo Dependabot
+  with:
+      distribution: temurin
+      java-version: "21"        # use a versão do projeto
+      cache: maven
+- run: ./mvnw -B verify
+```
 
 ## 5. Rede de segurança por camada
 
 | Camada | Proteção |
 |---|---|
 | Frontend | Snapshot de renderização (ex.: jsdom), testes dos pontos de injeção de HTML e verificação de carga |
-| Backend | Testes de caracterização das rotas (gravam as respostas atuais e provam que não mudaram), testes de integração, análise estática |
+| Backend | Testes de caracterização das rotas (gravam as respostas atuais e provam que não mudaram), testes de integração (em Spring Boot: JUnit 5 com MockMvc e Postgres via Testcontainers ou serviço da CI), análise estática |
 | Banco | Migrações testadas do zero na CI com Postgres efêmero |
 | Dependências | Dependabot, `npm audit` ou `pip-audit` |
 
