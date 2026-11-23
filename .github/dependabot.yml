@@ -1,0 +1,16 @@
+# Dependabot: PRs semanais de bump de dependências.
+# pip aponta para /src porque é lá que moram requirements.txt/requirements.lock.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /src
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly

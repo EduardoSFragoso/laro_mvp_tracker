@@ -1,0 +1,49 @@
+# CI do laro: lint, formatação e testes em duas versões do Python
+# (3.13 = imagem Docker, 3.14 = venv de dev). Auditoria de dependências
+# roda junto para pegar CVEs cedo.
+# Nota: actions/checkout@v4 e actions/setup-python@v5 — conferir versões
+# maiores novas quando o Dependabot abrir PR.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.13', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: src/requirements.lock
+      - name: Instalar dependências (lockfile)
+        run: pip install -r src/requirements.lock ruff
+      - name: Ruff check
+        run: ruff check .
+      - name: Ruff format
+        run: ruff format --check .
+      - name: Testes
+        run: pytest -q
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: pip-audit no lockfile
+        run: |
+          pip install pip-audit
+          pip-audit -r src/requirements.lock --strict
