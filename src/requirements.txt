@@ -1,5 +1,9 @@
+# Dependências diretas do bot (runtime).
+# O lockfile com o closure completo (direct + transitivas) fica em
+# src/requirements.lock e é o que o CI instala. Ao subir uma versão aqui,
+# regenere o lock (pip freeze do venv de dev, filtrando só runtime).
 discord.py==2.6.3
-asyncpg==0.30.0
-pytz==2025.2
-python-dotenv==1.1.1
+asyncpg==0.32.0
+pytz==2026.6
+python-dotenv==1.2.4
 audioop-lts==0.2.2
