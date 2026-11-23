@@ -52,7 +52,7 @@ jobs:
         # compartilharem a configuracao.
         run: |
           python -m venv .venv
-          .venv/bin/pip install -r src/requirements.lock pyright
+          .venv/bin/pip install -r src/requirements.lock pytest pyright
       # Usa o pyrightconfig.json da raiz (basic, src+tests)
       - name: Pyright
         run: .venv/bin/pyright
