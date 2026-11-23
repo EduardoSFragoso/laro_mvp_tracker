@@ -4,7 +4,7 @@ import logging
 
 import discord
 
-from laro.command import clean, settings, timezone, unset_mvp_channel, unsettimezone, woe
+from laro.command import clean, mobile, settings, timezone, unset_mvp_channel, unsettimezone, woe
 from laro.command.set_mvp_channel import setmvpchannel_core
 from laro.command.setpingrole import setpingrole_core, unsetpingrole_core
 from laro.command.track import track_core
@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 # Comandos que alteram configuração do servidor: restritos a quem tem a
 # permissão Gerenciar Servidor (donos/admins do Discord sempre passam).
 ADMIN_COMMANDS = frozenset(
-    {'clean', 'setmvpchannel', 'unsetmvpchannel', 'setpingrole', 'unsetpingrole', 'timezone', 'unsettimezone'}
+    {'clean', 'mobile', 'setmvpchannel', 'unsetmvpchannel', 'setpingrole', 'unsetpingrole', 'timezone', 'unsettimezone'}
 )
 
 
@@ -69,6 +69,8 @@ async def _dispatch_cmd(bot: Bot, message: discord.Message) -> None:
         await settings.settings_core(bot, message)
     elif sub == 'clean':
         await clean.clean_core(bot, message)
+    elif sub == 'mobile':
+        await mobile.mobile_core(bot, message)
     elif sub == 'timezone':
         if len(args) >= 1:
             await timezone.timezone_core(bot, message, ' '.join(args))

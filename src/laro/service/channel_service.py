@@ -432,6 +432,7 @@ def get_help_description(prefix: str) -> str:
         f'- `{p}settings` — tempos de spawn e timezone\n'
         f'- `{p}woe` — horários da WoE\n'
         f'- `{p}clean` — limpa o canal\n'
+        f'- `{p}mobile` — alterna a lista entre layout normal e mobile\n'
         f'- `{p}setmvpchannel` / `{p}unsetmvpchannel` — canal de notificação\n'
         f'- `{p}setpingrole` / `{p}unsetpingrole` — role pingada no aviso de respawn\n'
         '\n'
