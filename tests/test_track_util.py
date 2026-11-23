@@ -84,7 +84,7 @@ def test_sort_by_r2_for_mvp():
 
 
 def test_calc_remaining_time_updates_both():
-    entry_state = TrackEntryState(entry=None, track_time=datetime.now(), t1=60, t2=70)
+    entry_state = TrackEntryState(entry=make_mvp(), track_time=datetime.now(), t1=60, t2=70)
     track_time = datetime.now() - timedelta(minutes=5)
     entry_state.track_time = track_time
     track_util.calc_remaining_time(entry_state, track_time)

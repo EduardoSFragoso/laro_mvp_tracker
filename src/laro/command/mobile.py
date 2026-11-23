@@ -8,6 +8,8 @@ from laro.util.coroutine_util import run_coro
 
 
 async def mobile_core(bot: Bot, message: discord.Message) -> None:
+    if message.guild is None:
+        return
     guild_state = bot.get_guild_state(message.guild.id)
     if guild_state is None:
         return

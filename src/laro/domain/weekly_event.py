@@ -1,5 +1,28 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import ClassVar, TypedDict
+
+
+class WeeklyEvtTemplate(TypedDict):
+    """Uma ocorrência semanal de evento, como definida em ``WeeklyEvent.DATA``."""
+
+    name: str
+    type: str
+    weekday: str
+    begin: str
+    end: str
+
+
+class Evt(WeeklyEvtTemplate):
+    """Uma ocorrência concreta de evento, com os horários resolvidos."""
+
+    dt_begin: datetime
+    dt_end: datetime
+
+
 class WeeklyEvent:
-    DATA = [
+    DATA: ClassVar[list[WeeklyEvtTemplate]] = [
         # WoE oficial do servidor Ragnarok Online LATAM (fonte: ro.gnjoylatam.com —
         # guia de Guerras do Emperium): todo domingo, 20:00-22:00 no horário do
         # servidor (UTC-3 = America/Sao_Paulo). 16 castelos (WoE 1.0).

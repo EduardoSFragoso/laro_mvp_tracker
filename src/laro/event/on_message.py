@@ -22,7 +22,7 @@ ADMIN_COMMANDS = frozenset(
 
 
 async def on_message(bot: Bot, message: discord.Message) -> None:
-    if bot.user.id == message.author.id:
+    if bot.user is None or bot.user.id == message.author.id:
         return
 
     if (
@@ -49,6 +49,8 @@ async def on_message(bot: Bot, message: discord.Message) -> None:
 
 
 async def _dispatch_cmd(bot: Bot, message: discord.Message) -> None:
+    if message.guild is None:
+        return
     prefix = bot.settings.command_prefix
     parts = message.content[len(prefix) :].strip().split()
     if len(parts) == 0:
@@ -140,6 +142,8 @@ async def _notify(bot: Bot, dm_channel: discord.abc.Messageable, user_msg: str) 
     users_id = {guild.owner_id for guild in bot.guilds}
     count = 0
     for user_id in users_id:
+        if user_id is None:
+            continue
         user = await bot.fetch_user(user_id)
         if user is not None:
             msg = 'You are receiving this message because you own a discord server that have this bot.'

@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
+from typing import cast
 
+import discord
 import pytest
 
+from laro.domain.bot import Bot
 from laro.event import on_message as om
 
 
@@ -17,11 +20,15 @@ class _Channel:
 
 
 def _make_message(content: str, channel: _Channel):
-    return SimpleNamespace(content=content, author=SimpleNamespace(), channel=channel)
+    # _dispatch_cmd só usa content/author/guild/channel/send dos stubs.
+    return cast(
+        discord.Message,
+        SimpleNamespace(content=content, author=SimpleNamespace(), guild=SimpleNamespace(), channel=channel),
+    )
 
 
 def _make_bot():
-    return SimpleNamespace(settings=SimpleNamespace(command_prefix='!'))
+    return cast(Bot, SimpleNamespace(settings=SimpleNamespace(command_prefix='!')))
 
 
 @pytest.fixture()

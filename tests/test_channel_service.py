@@ -1,6 +1,10 @@
 from datetime import UTC, datetime, timedelta
+from typing import cast
+
+import discord
 
 from laro.config import Settings
+from laro.domain.bot import Bot
 from laro.domain.models import ChannelState
 from laro.domain.track_type import TrackType
 from laro.service import channel_service
@@ -53,7 +57,7 @@ def test_resolve_query_invalid_time_returns_error():
 
     channel_state = ChannelState(id_channel=1, id_guild=10, type=TrackType.MVP)
     results, mins_ago, error = _resolve_query(
-        BotStub(), types.SimpleNamespace(timezone=None), channel_state, 'bafomé', '99x9'
+        cast(Bot, BotStub()), types.SimpleNamespace(timezone=None), channel_state, 'bafomé', '99x9'
     )
     assert results == [] and mins_ago == 0
     assert error == 'HHMM format expected for user time'
@@ -62,14 +66,15 @@ def test_resolve_query_invalid_time_returns_error():
 def _msg_stub(msg_id, created_at, edited_at=None):
     import types
 
-    return types.SimpleNamespace(id=msg_id, created_at=created_at, edited_at=edited_at)
+    # is_msg_can_be_deleted só usa id/created_at/edited_at; o cast deixa isso explícito.
+    return cast(discord.Message, types.SimpleNamespace(id=msg_id, created_at=created_at, edited_at=edited_at))
 
 
 def _bot_stub():
     class BotStub:
         settings = Settings(bot_user_token=None, database_url=None)
 
-    return BotStub()
+    return cast(Bot, BotStub())
 
 
 def make_channel_state(msg_id=None):

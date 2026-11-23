@@ -3,7 +3,6 @@ from __future__ import annotations
 import discord
 
 from laro.domain.bot import Bot
-from laro.domain.models import ChannelState
 from laro.domain.track_type import TrackType
 from laro.service import channel_service
 from laro.util.coroutine_util import run_coro
@@ -13,6 +12,8 @@ async def clean_core(bot: Bot, message: discord.Message) -> None:
     validate_msg = channel_service.validate_channel(bot, message.channel)
     if validate_msg is not None:
         await run_coro(message.channel.send(validate_msg))
+        return
+    if message.guild is None:
         return
     guild_state = bot.get_guild_state(message.guild.id)
     if guild_state is None:
@@ -44,12 +45,18 @@ class CleanYesButton(discord.ui.Button):
         super().__init__(style=discord.ButtonStyle.primary, label='Yes')
 
     async def callback(self, interaction: discord.Interaction):
+        if interaction.guild_id is None or interaction.channel_id is None:
+            await run_coro(interaction.response.defer())
+            return
         bot = self.bot
         guild_state = bot.get_guild_state(interaction.guild_id)
         if guild_state is None:
             await run_coro(interaction.response.defer())
             return
-        channel_state: ChannelState = guild_state.channel_states.get(interaction.channel_id)
+        channel_state = guild_state.channel_states.get(interaction.channel_id)
+        if channel_state is None:
+            await run_coro(interaction.response.defer())
+            return
         key = 't2' if self.trackType == TrackType.MVP else 't1'
         for entry_state in channel_state.entry_states:
             mins_ago = getattr(entry_state, key)

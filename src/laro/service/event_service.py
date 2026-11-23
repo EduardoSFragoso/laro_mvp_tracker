@@ -8,7 +8,7 @@ import discord
 from pytz import timezone
 
 from laro.domain.bot import Bot
-from laro.domain.weekly_event import WeeklyEvent
+from laro.domain.weekly_event import Evt, WeeklyEvent, WeeklyEvtTemplate
 from laro.util.date_util import fmt_dt, get_dt_now, get_local_tzinfo
 
 
@@ -37,7 +37,7 @@ def _evt_map(
     weekday_today = dt_now.isoweekday()
     weekday_tomorrow = 1 if weekday_today == 7 else weekday_today + 1
     result: dict[str, str] = {'ongoing': '', 'next': EMPTY_SLOT, **dict.fromkeys(keys, EMPTY_SLOT)}
-    next_evt = None
+    next_evt: Evt | None = None
     for evt in get_evts(bot, type):
         key = key_of(int(evt['weekday']), weekday_today, weekday_tomorrow)
         if key in result:
@@ -68,7 +68,7 @@ def build_evt_embed(bot: Bot, emoji: str, title: str, evt_map: dict[str, str]) -
     return embed
 
 
-def get_next_evt(bot: Bot, type: str = None, dt_now: datetime | None = None) -> tuple[dict | None, bool]:
+def get_next_evt(bot: Bot, type: str | None = None, dt_now: datetime | None = None) -> tuple[Evt | None, bool]:
     """Next occurrence of the event type, plus whether it is ongoing now.
 
     Tests inject dt_now to pin the clock; production omits it and uses now.
@@ -94,12 +94,12 @@ def get_next_evt(bot: Bot, type: str = None, dt_now: datetime | None = None) -> 
     return next_evt, ongoing
 
 
-def is_ongoing(bot: Bot, evt: dict) -> bool:
+def is_ongoing(bot: Bot, evt: Evt) -> bool:
     dt_now = get_dt_now(bot.settings.timezone)
     return evt['dt_begin'] <= dt_now <= evt['dt_end']
 
 
-def format_evt(bot: Bot, evt: dict) -> str:
+def format_evt(bot: Bot, evt: Evt) -> str:
     local_tz = get_local_tzinfo()
     dt_now = get_dt_now(bot.settings.timezone)
     result = '**'
@@ -116,7 +116,7 @@ def format_evt(bot: Bot, evt: dict) -> str:
     return result
 
 
-def get_evts(bot: Bot, type: str = None, dt_now: datetime | None = None) -> list[dict]:
+def get_evts(bot: Bot, type: str | None = None, dt_now: datetime | None = None) -> list[Evt]:
     """Occurrences of the weekly events around dt_now (defaults to now).
 
     An occurrence that already ended rolls forward one week, so the search
@@ -128,7 +128,7 @@ def get_evts(bot: Bot, type: str = None, dt_now: datetime | None = None) -> list
     elif dt_now.tzinfo is None:
         dt_now = timezone(bot.settings.timezone).localize(dt_now, is_dst=False)
     tzinfo = timezone(bot.settings.timezone)
-    result = []
+    result: list[Evt] = []
     for evt in WeeklyEvent.DATA:
         if type is not None and evt['type'] != type:
             continue
@@ -139,15 +139,13 @@ def get_evts(bot: Bot, type: str = None, dt_now: datetime | None = None) -> list
         if dt_evt_end <= dt_now:
             dt_evt_begin += timedelta(days=7)
             dt_evt_end += timedelta(days=7)
-        evtcp = dict(evt)
-        evtcp['dt_begin'] = dt_evt_begin
-        evtcp['dt_end'] = dt_evt_end
+        evtcp: Evt = {**evt, 'dt_begin': dt_evt_begin, 'dt_end': dt_evt_end}
         result.append(evtcp)
     result.sort(key=lambda x: x['dt_begin'])
     return result
 
 
-def _weekly_evt_dt(bot: Bot, tzinfo, evt: dict, begin_or_end: str, dt_now: datetime):
+def _weekly_evt_dt(bot: Bot, tzinfo, evt: WeeklyEvtTemplate, begin_or_end: str, dt_now: datetime):
     parts = evt[begin_or_end].split(':')
     dt = dt_now.replace(
         hour=int(parts[0]),
