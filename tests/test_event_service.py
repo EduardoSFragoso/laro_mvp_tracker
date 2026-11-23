@@ -1,6 +1,8 @@
 from datetime import datetime
+from typing import cast
 
 from laro.config import Settings
+from laro.domain.bot import Bot
 from laro.service import event_service
 
 
@@ -8,7 +10,7 @@ def stub_bot(timezone='America/Sao_Paulo'):
     class StubBot:
         settings = Settings(bot_user_token=None, database_url=None, timezone=timezone)
 
-    return StubBot()
+    return cast(Bot, StubBot())
 
 
 def sunday_night(hour=22, minute=30):

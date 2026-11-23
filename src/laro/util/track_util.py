@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import cast
 
 from laro.domain.models import ChannelState, Mvp, TrackEntryState
 
@@ -19,7 +20,9 @@ def track_entry(channel_state: ChannelState, entry: Mvp, track_time: datetime, c
     entry_state.t2 = entry.t2
     if custom and entry.t1custom is not None:
         entry_state.t1 = entry.t1custom
-        entry_state.t2 = entry.t2custom
+        # t2custom vive no banco junto com t1custom (mesma customização); o cast
+        # só documenta o invariante sem alterar o valor em runtime.
+        entry_state.t2 = cast(int, entry.t2custom)
 
     entry_state.track_time = track_time
     entry_state.notified = False

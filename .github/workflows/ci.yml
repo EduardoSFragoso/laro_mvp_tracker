@@ -36,6 +36,27 @@ jobs:
       - name: Testes
         run: pytest -q
 
+  types:
+    # Escrever types nao varia por versao do Python: um unico job basta.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+          cache: pip
+          cache-dependency-path: src/requirements.lock
+      - name: Instalar dependências (lockfile) + pyright no .venv
+        # O pyrightconfig.json resolve imports via .venv (venvPath) — mesmo
+        # layout do dev. Cria a venv com o mesmo nome para o CI e o dev
+        # compartilharem a configuracao.
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -r src/requirements.lock pyright
+      # Usa o pyrightconfig.json da raiz (basic, src+tests)
+      - name: Pyright
+        run: .venv/bin/pyright
+
   audit:
     runs-on: ubuntu-latest
     steps:

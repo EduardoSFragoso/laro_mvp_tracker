@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 async def on_guild_remove(guild: discord.Guild, bot: Bot) -> None:
     log.info(f'Withdrawn from {guild.name}.')
-    bot.guild_states[guild.id] = None
+    bot.guild_states.pop(guild.id, None)
     conn = await bot.pool_acquire()
     try:
         await conn.execute('DELETE FROM mvp_guild WHERE id_guild=$1', guild.id)

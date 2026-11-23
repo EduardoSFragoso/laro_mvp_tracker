@@ -14,6 +14,8 @@ async def timezone_core(bot: Bot, message: discord.Message, timezone: str) -> No
         msg += '\nExamples of valid timezones can be found here (TZ Identifier column):'
         msg += '\nhttps://en.wikipedia.org/wiki/List_of_tz_database_time_zones#Time_Zone_abbreviations'
     else:
+        if message.guild is None:
+            return
         guild_state = bot.get_guild_state(message.guild.id)
         if guild_state is None:
             return

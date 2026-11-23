@@ -12,6 +12,8 @@ async def track_core(bot: Bot, message: discord.Message, mvp: str, user_time: st
     if validate_msg is not None:
         await run_coro(message.channel.send(validate_msg))
         return
+    if message.guild is None:
+        return
     guild_state = bot.get_guild_state(message.guild.id)
     if guild_state is None:
         await run_coro(message.channel.send('Bot is still starting up, try again in a moment.'))

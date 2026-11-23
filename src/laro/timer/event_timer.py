@@ -7,6 +7,7 @@ import discord
 
 from laro.domain.bot import Bot
 from laro.domain.emoji import Emoji
+from laro.domain.weekly_event import Evt
 from laro.service import event_service
 from laro.util.coroutine_util import run_coro
 from laro.util.date_util import fmt_time_short, get_dt_now
@@ -45,7 +46,7 @@ class EventTimer:
         EventTimer.idx = (EventTimer.idx + 1) % len(EVENT_TIMER_TYPES)
 
     @staticmethod
-    def get_msg_prefix(evt: dict) -> str:
+    def get_msg_prefix(evt: Evt) -> str:
         msg = ''
         if evt['type'] == 'woe':
             msg += Emoji.WOE.value

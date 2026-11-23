@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 import discord
 
 from laro.domain.bot import Bot
-from laro.domain.models import ChannelState, EntryLog
+from laro.domain.models import ChannelState, EntryLog, GuildState
 from laro.domain.track_type import TrackType
 from laro.service import entry_service
 from laro.util import track_util
@@ -84,7 +84,7 @@ def parse_user_time(timezone: str, user_time: str) -> datetime | str:
 
 
 def _resolve_query(
-    bot: Bot, guild_state, channel_state: ChannelState, mvp: str, user_time: str
+    bot: Bot, guild_state, channel_state: ChannelState, mvp: str, user_time: str | None
 ) -> tuple[list, int, str | None]:
     """Resolve ``mvp``/``user_time`` into (results, mins_ago, error)."""
     mins_ago = 0
@@ -104,9 +104,9 @@ def _resolve_query(
 
 
 async def track_by_message(
-    bot: Bot, message: discord.Message, channel_state: ChannelState, mvp: str, user_time: str
+    bot: Bot, message: discord.Message, channel_state: ChannelState, mvp: str, user_time: str | None
 ) -> None:
-    guild_state = bot.get_guild_state(message.channel.guild.id)
+    guild_state = bot.get_guild_state(channel_state.id_guild)
     if guild_state is None:
         return
     results, mins_ago, error = _resolve_query(bot, guild_state, channel_state, mvp, user_time)
@@ -114,14 +114,22 @@ async def track_by_message(
         await run_coro(message.channel.send(error))
         return
     await _dispatch_track(
-        bot, channel_state, results, mins_ago, user_time, message.author.id, mvp, MessageSender(message.channel)
+        bot,
+        guild_state,
+        channel_state,
+        results,
+        mins_ago,
+        user_time,
+        message.author.id,
+        mvp,
+        MessageSender(message.channel),
     )
 
 
 async def track_by_interaction(
-    bot: Bot, interaction: discord.Interaction, channel_state: ChannelState, mvp: str, user_time: str
+    bot: Bot, interaction: discord.Interaction, channel_state: ChannelState, mvp: str, user_time: str | None
 ) -> None:
-    guild_state = bot.get_guild_state(interaction.channel.guild.id)
+    guild_state = bot.get_guild_state(channel_state.id_guild)
     if guild_state is None:
         return
     results, mins_ago, error = _resolve_query(bot, guild_state, channel_state, mvp, user_time)
@@ -129,18 +137,36 @@ async def track_by_interaction(
         await run_coro(interaction.response.send_message(error))
         return
     await _dispatch_track(
-        bot, channel_state, results, mins_ago, user_time, interaction.user.id, mvp, InteractionSender(interaction)
+        bot,
+        guild_state,
+        channel_state,
+        results,
+        mins_ago,
+        user_time,
+        interaction.user.id,
+        mvp,
+        InteractionSender(interaction),
     )
 
 
 async def _dispatch_track(
-    bot: Bot, channel_state: ChannelState, results: list, mins_ago: int, user_time: str, id_user: int, mvp: str, sender
+    bot: Bot,
+    guild_state: GuildState,
+    channel_state: ChannelState,
+    results: list,
+    mins_ago: int,
+    user_time: str | None,
+    id_user: int,
+    mvp: str,
+    sender,
 ) -> None:
     type = channel_state.type
     if len(results) == 0:
         await run_coro(sender.send(f'{type.desc} "{mvp}" not found.'))
     elif len(results) == 1:
-        bot_reply_msg = await update_track_time(bot, channel_state, results[0], mins_ago, user_time, id_user)
+        bot_reply_msg = await update_track_time(
+            bot, guild_state, channel_state, results[0], mins_ago, user_time, id_user
+        )
         await run_coro(sender.send(bot_reply_msg))
     else:
         msg = _multiple_matches_msg(type, mvp, user_time)
@@ -152,7 +178,7 @@ async def _dispatch_track(
         )
 
 
-def _multiple_matches_msg(type: TrackType, query: str, user_time: str) -> str:
+def _multiple_matches_msg(type: TrackType, query: str, user_time: str | None) -> str:
     msg = 'More than one ' + type.desc
     msg += ' starting with "' + query + '" has been found.\n'
     msg += '\n'
@@ -189,7 +215,13 @@ class InteractionSender:
 
 
 async def update_track_time(
-    bot: Bot, channel_state: ChannelState, entry, mins_ago: int, user_time: str, id_user: int
+    bot: Bot,
+    guild_state: GuildState,
+    channel_state: ChannelState,
+    entry,
+    mins_ago: int,
+    user_time: str | None,
+    id_user: int,
 ) -> str:
     type = channel_state.type
     row_sql = type.sql_desc
@@ -228,14 +260,12 @@ async def update_track_time(
     finally:
         await bot.pool_release(conn)
 
-    entry_state = track_util.track_entry(
-        channel_state, entry, track_time, custom=bot.get_guild_state(channel_state.id_guild).custom
-    )
+    entry_state = track_util.track_entry(channel_state, entry, track_time, custom=guild_state.custom)
     await update_channel_message(bot, channel_state)
     return _fmt_track_reply(entry_state, user_time)
 
 
-def _fmt_track_reply(entry_state, user_time: str) -> str:
+def _fmt_track_reply(entry_state, user_time: str | None) -> str:
     msg = entry_state.entry.name
     msg += ' (' + entry_state.entry.display_map + ')'
     msg += ' in '
@@ -294,11 +324,11 @@ async def update_notification(bot: Bot, channel_state: ChannelState, open_entrie
         content = None
         allowed_mentions = discord.AllowedMentions.none()
         role_id = guild_state.id_notification_role
-        if new_windows and role_id is not None:
-            role = get_guild_from_bot(bot, guild_state.id_guild).get_role(role_id)
-            if role is not None:
-                content = role.mention
-                allowed_mentions = discord.AllowedMentions(roles=[role])
+        guild = get_guild_from_bot(bot, guild_state.id_guild)
+        role = guild.get_role(role_id) if new_windows and role_id is not None and guild is not None else None
+        if role is not None:
+            content = role.mention
+            allowed_mentions = discord.AllowedMentions(roles=[role])
         try:
             sent = await run_coro(channel.send(content, embed=embed, allowed_mentions=allowed_mentions))
         except discord.DiscordException:
@@ -331,7 +361,8 @@ async def _edit_notification(
     content = None
     allowed_mentions = discord.AllowedMentions.none()
     if role_ping and guild_state.id_notification_role is not None:
-        role = get_guild_from_bot(bot, guild_state.id_guild).get_role(guild_state.id_notification_role)
+        guild = get_guild_from_bot(bot, guild_state.id_guild)
+        role = guild.get_role(guild_state.id_notification_role) if guild is not None else None
         if role is not None:
             content = role.mention
             allowed_mentions = discord.AllowedMentions(roles=[role])
@@ -344,6 +375,8 @@ async def _edit_notification(
 
 async def _delete_notification(channel_state: ChannelState) -> None:
     msg = channel_state.notification_message
+    if msg is None:
+        return
     channel_state.notification_message = None
     with contextlib.suppress(discord.DiscordException):
         await run_coro(msg.delete())
@@ -676,7 +709,9 @@ class SetChannelYesButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         await run_coro(interaction.response.edit_message(view=None))
-        await set_channel(self.bot, interaction.channel, self.trackType)
+        channel = interaction.channel
+        if isinstance(channel, discord.TextChannel):
+            await set_channel(self.bot, channel, self.trackType)
 
 
 class SetChannelNoButton(discord.ui.Button):
@@ -688,13 +723,13 @@ class SetChannelNoButton(discord.ui.Button):
 
 
 class TrackView(discord.ui.View):
-    def __init__(self, *, timeout=180, bot: Bot, opts: list, mins_ago: int, user_time: str):
+    def __init__(self, *, timeout=180, bot: Bot, opts: list, mins_ago: int, user_time: str | None):
         super().__init__(timeout=timeout)
         self.add_item(TrackSelect(bot=bot, opts=opts, mins_ago=mins_ago, user_time=user_time))
 
 
 class TrackSelect(discord.ui.Select):
-    def __init__(self, bot: Bot, opts: list, mins_ago: int, user_time: str):
+    def __init__(self, bot: Bot, opts: list, mins_ago: int, user_time: str | None):
         self.bot = bot
         self.opts = opts
         self.mins_ago = mins_ago
@@ -705,13 +740,17 @@ class TrackSelect(discord.ui.Select):
         super().__init__(placeholder='Select an option', options=options)
 
     async def callback(self, interaction: discord.Interaction):
+        if interaction.guild_id is None or interaction.channel_id is None:
+            return
         entry = next((x for x in self.opts if str(x.id) == self.values[0]), None)
         guild_state = self.bot.get_guild_state(interaction.guild_id)
         if guild_state is None or entry is None:
             return
         channel_state = guild_state.channel_states.get(interaction.channel_id)
+        if channel_state is None:
+            return
         bot_reply_msg = await update_track_time(
-            self.bot, channel_state, entry, self.mins_ago, self.user_time, interaction.user.id
+            self.bot, guild_state, channel_state, entry, self.mins_ago, self.user_time, interaction.user.id
         )
         await run_coro(interaction.response.edit_message(content=bot_reply_msg, view=None))
 

@@ -1,3 +1,6 @@
+from typing import cast
+
+from laro.domain.bot import Bot
 from laro.domain.models import Mvp
 from laro.service.entry_service import ac_entries, find_entry
 
@@ -7,8 +10,8 @@ class StubBot:
         self.mvp_list = mvp_list
 
 
-def make_bot(mvp_list):
-    return StubBot(mvp_list)
+def make_bot(mvp_list) -> Bot:
+    return cast(Bot, StubBot(mvp_list))
 
 
 MVP_LIST = [
