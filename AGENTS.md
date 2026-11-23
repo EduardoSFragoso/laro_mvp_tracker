@@ -57,7 +57,8 @@
 - Em projetos Python, use as ferramentas já configuradas no repositório; opções possíveis incluem Ruff, Black, mypy ou Pyright.
 - Em projetos JavaScript/TypeScript, siga a configuração existente, por exemplo ESLint e Prettier.
 - Não introduza uma ferramenta nova sem necessidade; respeite primeiro as dependências e convenções existentes.
-- Exceção ao item anterior: ferramentas novas são aceitáveis quando criam uma rede de segurança ou fecham um risco real; registre o motivo no `handoff.md`.
+- Em projetos Java com Spring Boot e Maven, use sempre o wrapper (`./mvnw`) e as ferramentas configuradas no repositório, por exemplo Spotless ou google-java-format, Checkstyle, SpotBugs ou Error Prone, e JUnit 5. Rode `./mvnw verify` antes de dar uma tarefa por concluída.
+- Exceção ao item sobre ferramentas novas: elas são aceitáveis quando criam uma rede de segurança ou fecham um risco real; registre o motivo no `handoff.md`.
 - Na CI, declare `permissions` mínimas (por exemplo `contents: read`), mantenha o Dependabot (ou equivalente) ativo e atualize as GitHub Actions.
 
 ## Git e colaboração
@@ -74,6 +75,15 @@
 - Quem não puder dar push entrega patches (`git format-patch`) gerados sobre a branch principal **atual** e verificados num clone limpo (`git am` e todas as verificações do projeto). Se a principal mudar, refaça o patch.
 - Inclua no mesmo commit os artefatos derivados que a mudança alterar (lockfiles, hashes de cache, arquivos gerados).
 
+## Configuração do repositório: PRs e commits
+
+- O agente não altera configurações do repositório (rulesets, proteção de branch, segredos, permissões de Actions, Pages) nem contorna as proteções existentes (bypass, push forçado, desativar checks). Se uma configuração atrapalhar, explique o problema e proponha a mudança para a pessoa aplicar.
+- Siga o template de PR (`.github/pull_request_template.md`), se existir. Todo PR descreve o que mudou e por quê, como foi testado e quais os riscos; prefira PRs pequenos e focados em um assunto.
+- Siga a política de assinatura e de autoria de commits descrita no `handoff.md` e não a desative.
+- Antes de cada commit, confira `git status` e `git diff --staged`: nada de segredos, `.env`, dumps, binários ou artefatos de build (`target/`, `build/`, `node_modules/`, `dist/`). Mantenha o `.gitignore` em dia.
+- Se um segredo for commitado, trate-o como vazado: rotacione a credencial primeiro. Reescrever o histórico é opcional e vem depois.
+- Checklist de configuração para quem administra o repositório: `docs/configuracao-repositorio.md`.
+
 ## Segurança e proteção de dados
 
 - Valide e higienize entradas não confiáveis antes de usá-las.
@@ -89,6 +99,8 @@
 - Em repositório novo, varra o código **e o histórico do Git** em busca de segredos. Se achar algum, pare e avise: o passo é **rotacionar** a credencial. Apagá-la do código não basta, porque o histórico guarda o valor.
 - Em repositório público, todo o histórico é público. No frontend só podem existir chaves feitas para serem públicas.
 - Configure CORS apenas com as origens necessárias (nunca `*` com credenciais) e faça o frontend chamar a API somente por HTTPS.
+- Em projetos Spring Boot, use parâmetros nomeados (JPA, JdbcTemplate) ou `PreparedStatement` em vez de concatenar SQL, e mantenha credenciais fora de `application*.properties` e `.yml` versionados: use placeholders (`${VARIAVEL}`) preenchidos por variáveis de ambiente.
+- No Actuator, exponha em produção só o endpoint `health`, nunca `management.endpoints.web.exposure.include=*`. Revise a `SecurityFilterChain` (rotas com `permitAll`, CSRF e CORS) sempre que uma rota nova for criada.
 
 ## Projetos com frontend no GitHub Pages, backend em VM e banco no Neon
 
@@ -117,11 +129,3 @@
 - Ao encontrar sinais de código difícil de entender ou manter, avalie se uma refatoração é apropriada.
 - Mantenha-se atento a mudanças nas ferramentas, bibliotecas e práticas relevantes para as tecnologias do projeto.
 - Compartilhe conhecimento e use revisões, documentação e recursos da comunidade para melhorar continuamente as práticas do projeto.
-
-## Padrões de interação específicos deste projeto
-
-- Comunicação em português (PT-BR), mesmo quando outputs e erros estiverem em inglês.
-- Respostas curtas, claras e passo a passo: um passo por resposta, aguardando confirmação antes do próximo.
-- Comandos: um por vez, sempre no formato copiável com um clique (card "bash" do Vibe quanto possível, pois blocos de código não oferecem botão de copiar na interface atual).
-- Segredos: nunca ler/exibir `.env`, `src/.env`, `*.pem`, tokens — nem com aviso prévio, salvo pedido explícito do usuário (ex.: restauração); preferir grep de chave específica e mascarar valores.
-- A pessoa executa os comandos na VM; o agente executa apenas o que é do PC local, deixando claro em qual ambiente cada comando roda.
