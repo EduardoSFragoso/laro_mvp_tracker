@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import discord
 
@@ -486,10 +486,11 @@ def is_msg_can_be_deleted(bot: Bot, channel_state: ChannelState, msg: discord.Me
     # última janela fecha); a rotina de limpeza não pode apagá-lo antes.
     if channel_state.notification_message is not None and channel_state.notification_message.id == msg.id:
         return False
-    if datetime.utcnow() - msg.created_at.replace(tzinfo=None) >= timedelta(days=14):
+    # msg.created_at/edited_at são tz-aware (UTC); utcnow() deprecado não entra.
+    if datetime.now(UTC) - msg.created_at >= timedelta(days=14):
         return False
     msg_date = msg.created_at if msg.edited_at is None else msg.edited_at
-    return datetime.utcnow() - msg_date.replace(tzinfo=None) > timedelta(seconds=bot.settings.del_msg_after_secs)
+    return datetime.now(UTC) - msg_date > timedelta(seconds=bot.settings.del_msg_after_secs)
 
 
 async def set_channel(bot: Bot, channel: discord.TextChannel, type: TrackType) -> None:
