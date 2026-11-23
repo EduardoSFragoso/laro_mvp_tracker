@@ -6,9 +6,11 @@ services:
         container_name: laro-db
         restart: unless-stopped
         environment:
-            POSTGRES_USER: postgres
-            POSTGRES_PASSWORD: postgres
-            POSTGRES_DB: laro
+            # Creds interpoladas do .env da raiz (ver .env.example). Os defaults
+            # servem só para o dev local; na VM defina uma senha própria.
+            POSTGRES_USER: ${POSTGRES_USER:-postgres}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+            POSTGRES_DB: ${POSTGRES_DB:-laro}
         # Porta NÃO publicada: o Postgres fica só na rede interna do compose
         # (acesso do host: 'docker compose exec db psql -U postgres -d laro').
         # Para desenvolvimento com o bot rodando no host, descomente:
@@ -18,11 +20,10 @@ services:
             - laro_pgdata:/var/lib/postgresql/data
             # O entrypoint do postgres aplica os scripts em ordem alfabética
             # na primeira subida (volume vazio): schema + seed LATAM.
-            # O gmctokens.sql é legado e é intencionalmente ignorado.
             - ./sql/laro.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
             - ./sql/seed_mvp_latam.sql:/docker-entrypoint-initdb.d/02_reseed_mvp_latam.sql:ro
         healthcheck:
-            test: ['CMD-SHELL', 'pg_isready -U postgres -d laro']
+            test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
             interval: 5s
             timeout: 3s
             retries: 10
@@ -38,7 +39,7 @@ services:
             - .env
         environment:
             # Sobrescreve a DATABASE_URL do .env: dentro do compose o host é db
-            DATABASE_URL: postgres://postgres:postgres@db:5432/laro
+            DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-laro}
         healthcheck:
             # 200 só depois do tracker pronto (tracker_ready). HEALTH_PORT=0
             # (servidor de health desligado) conta como saudável. Reinício por
