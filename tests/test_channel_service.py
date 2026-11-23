@@ -1,6 +1,9 @@
+from datetime import UTC, datetime, timedelta
+
 from laro.config import Settings
 from laro.domain.models import ChannelState
 from laro.domain.track_type import TrackType
+from laro.service import channel_service
 from laro.service.channel_service import _multiple_matches_msg, _resolve_query, parse_user_time
 
 
@@ -54,3 +57,60 @@ def test_resolve_query_invalid_time_returns_error():
     )
     assert results == [] and mins_ago == 0
     assert error == 'HHMM format expected for user time'
+
+
+def _msg_stub(msg_id, created_at, edited_at=None):
+    import types
+
+    return types.SimpleNamespace(id=msg_id, created_at=created_at, edited_at=edited_at)
+
+
+def _bot_stub():
+    class BotStub:
+        settings = Settings(bot_user_token=None, database_url=None)
+
+    return BotStub()
+
+
+def make_channel_state(msg_id=None):
+    return ChannelState(
+        id_channel=1,
+        id_guild=10,
+        type=TrackType.MVP,
+        id_message=msg_id,
+        id_help_message=None,
+        notification_message=None,
+    )
+
+
+def _dt_ago(**kwargs):
+    return datetime.now(UTC) - timedelta(**kwargs)
+
+
+def test_msg_dentro_da_janela_nao_apaga():
+    msg = _msg_stub(100, _dt_ago(seconds=2))
+    # a mensagem só é candidata a apagar depois de viver DEL_MSG_AFTER_SECS (10s)
+    assert channel_service.is_msg_can_be_deleted(_bot_stub(), make_channel_state(msg_id=999), msg) is False
+
+
+def test_msg_velha_fora_da_janela_pode_apagar():
+    msg = _msg_stub(100, _dt_ago(seconds=60))
+    assert channel_service.is_msg_can_be_deleted(_bot_stub(), make_channel_state(msg_id=999), msg) is True
+
+
+def test_msg_com_14_dias_e_protegida():
+    msg = _msg_stub(100, _dt_ago(days=20))
+    # regra de segurança: >=14 dias nunca apaga (mesmo fora da janela)
+    assert channel_service.is_msg_can_be_deleted(_bot_stub(), make_channel_state(msg_id=999), msg) is False
+
+
+def test_msg_editada_recente_nao_apaga():
+    # criada há 60s (fora da janela) mas editada há 2s (dentro): janela reinicia
+    msg = _msg_stub(100, _dt_ago(seconds=60), edited_at=_dt_ago(seconds=2))
+    assert channel_service.is_msg_can_be_deleted(_bot_stub(), make_channel_state(msg_id=999), msg) is False
+
+
+def test_msg_da_tabela_nao_apaga():
+    msg = _msg_stub(100, datetime(2026, 1, 1, tzinfo=UTC))
+    # mensagem apontada como tabela/ajuda do canal é protegida, sem exceção
+    assert channel_service.is_msg_can_be_deleted(_bot_stub(), make_channel_state(msg_id=100), msg) is False
