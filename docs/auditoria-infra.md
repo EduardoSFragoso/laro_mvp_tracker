@@ -1,8 +1,8 @@
 # Auditoria de infraestrutura
 
-Checklist para projetos com **frontend no GitHub Pages, backend em VM (Oracle) e Postgres no Neon**, tudo no mesmo repositório. É referenciado pelo `AGENTS.md`.
+Checklist do **laro_mvp_tracker**: bot Discord em Python (Docker) na VM Oracle `laro-vnic`, Postgres 16 em container no mesmo compose. Repo **público** no GitHub. É referenciado pelo `AGENTS.md`.
 
-**Regra de ouro:** nunca cole segredos reais (senhas, tokens, chaves, `DATABASE_URL` completa). Mascare valores e hosts em qualquer saída enviada a uma IA.
+**Regra de ouro:** nunca cole segredos reais (senha do Postgres, token do bot, chaves SSH). Mascare valores e hosts em qualquer saída enviada a uma IA.
 
 ## Ordem das etapas
 
@@ -10,184 +10,104 @@ Checklist para projetos com **frontend no GitHub Pages, backend em VM (Oracle) e
 2. Segredos: rotacionar o que estiver exposto, antes de qualquer refatoração.
 3. Rede de segurança: testes de caracterização, snapshot ou equivalente.
 4. CI e proteção da branch principal.
-5. Validação de entrada e contratos da API.
+5. Validação de entrada (comandos do bot).
 6. Refatorações, uma etapa por vez, com a rede de segurança verde.
 7. `handoff.md` para quem continuar.
 
-## 1. GitHub Pages e repositório
+## 1. Repositório e histórico
 
-- Em **Settings → Pages**, veja a origem do deploy (branch/pasta ou GitHub Action). Só a pasta do frontend deve ser publicada.
-- Se a raiz do repositório for publicada, tudo o que estiver nela é baixável por URL, inclusive o código do servidor.
+- O repo é **público**: todo o histórico é exposição. Nunca versionar `.env`, `.pem`, dumps.
 - Procure arquivos sensíveis versionados:
 
 ```bash
-git ls-files | grep -Ei '\.env|\.pem|\.key|dump|\.sql$|backup'
+git ls-files | grep -Ei '\.env$|\.env\.|\.pem|\.key|dump|\.sql\.gz|backup'
 ```
 
-- Procure o mesmo no **histórico** (arquivos que já foram apagados continuam lá):
+- Procure o mesmo no **histórico** (arquivos apagados continuam lá):
 
 ```bash
-git log --all --diff-filter=A --name-only --format= | grep -Ei '\.env|\.pem|\.key|dump|\.sql$' | sort -u
+git log --all --diff-filter=A --name-only --format= | grep -Ei '\.env|\.pem|\.key|dump' | sort -u
 ```
 
-- Use um detector de segredos no código e no histórico (por exemplo `gitleaks` ou `trufflehog`), rodando localmente.
-- No frontend, só podem existir chaves feitas para serem públicas.
+- Use um detector de segredos no código e no histórico (`gitleaks` ou `trufflehog`), rodando localmente.
+- `sql/laro.sql` e `sql/seed_mvp_latam.sql` são schema + seed de dados **do jogo** (MVPs, mapas) — sem credenciais por desenho. Se um dia um dump de dados reais for versionado, trata-se como vazamento potencial (tem IDs de Discord; avalia antes).
+- `.env.example` é o único arquivo de ambiente versionado: só nomes de variáveis, nunca valores.
 
 ### Se achar um segredo
 
-1. **Rotacione primeiro**: resete a senha da role no Neon, gere uma nova chave SSH ou de API, regenere tokens de terceiros.
+1. **Rotacione primeiro**: regenere o token do bot no Discord Developer Portal (isso troca a credencial viva), troque a senha do Postgres da VM.
 2. Só depois decida se vale reescrever o histórico. A rotação é o que realmente protege; apagar do código não basta.
 
-## 2. Neon (Postgres)
+## 2. Banco (Postgres no compose, volume local)
 
-No console do Neon, confira:
+- O Postgres **não publica porta**: só a rede interna do compose (`docker-compose.yml`, comentário no serviço `db`). Acesso do host via `docker compose exec db psql -U postgres -d laro`.
+- `DATABASE_URL` só no `.env` da VM — nunca no repo, nunca no frontend (não existe frontend).
+- O projeto é single-tenant e usa a role dona do banco (`POSTGRES_USER`). Aceito por simplicidade; revisitar se um dia expor API.
+- **Backup** (o volume `laro_pgdata` na VM é a única cópia dos dados):
 
-- plano e **janela de restauração** (antes de qualquer mudança de esquema);
-- branches existentes e a role usada pela aplicação;
-- o host usado pela aplicação (`-pooler`) e pelas migrações (conexão direta).
-
-Regras:
-
-- `DATABASE_URL` só no servidor, com `sslmode=require`.
-- A aplicação usa uma **role com privilégios mínimos**, nunca a dona do banco (`neondb_owner`). As migrações usam outra role.
-- Migrações versionadas (Flyway ou Liquibase em Java, Alembic em Python, Prisma Migrate ou node-pg-migrate em Node), testadas do zero na CI com um Postgres de serviço e aplicadas primeiro numa **branch do Neon** criada a partir da produção.
-
-Em Java, a URL JDBC leva `sslmode=require` (`jdbc:postgresql://HOST/BANCO?sslmode=require`). Confira na documentação do Neon as recomendações do driver ao usar o pooler.
-
-Consultas de leitura, para rodar numa branch:
-
-```sql
-SELECT current_user, version();
-
-SELECT rolname, rolsuper, rolcreatedb, rolcreaterole
-FROM pg_roles WHERE rolname NOT LIKE 'pg_%';
-
-SELECT grantee, table_schema, table_name, privilege_type
-FROM information_schema.role_table_grants
-WHERE grantee = 'NOME_DA_ROLE_DA_APLICACAO'
-ORDER BY table_schema, table_name;
+```bash
+# dump de leitura (nome de arquivo com data, sem pessoal):
+docker compose exec db pg_dump -U postgres laro > backup_$(date +%F).sql
 ```
+
+- Restauro testado uma vez (2026-11-23, migração pra VM nova): `DROP SCHEMA public CASCADE; CREATE SCHEMA public` + `psql < dump`. Documentado no histórico da sessão; refazer em simulação antes de confiar numa emergência.
 
 ## 3. VM Oracle
 
-Comandos de **leitura** para a pessoa executar na VM (mascare IPs e hostnames antes de devolver a saída):
+Comandos de **leitura** para o dono executar na VM (mascare IPs antes de devolver a saída):
 
 ```bash
 ss -tlnp
+docker compose -f ~/laro_mvp_tracker/docker-compose.yml ps
 sudo ufw status verbose
 sudo sshd -T | grep -Ei 'passwordauthentication|permitrootlogin|pubkeyauthentication'
-systemctl list-units --type=service --state=running --no-pager
-stat -c '%a %U:%G %n' /etc/NOME_DO_APP/*.env
+stat -c '%a %U:%G %n' ~/laro_mvp_tracker/.env
 ```
 
-O último comando mostra só as permissões do arquivo de ambiente (o esperado é `600`), sem ler o conteúdo.
+O último mostra só a permissão do `.env` (o esperado é `600`), sem ler o conteúdo.
 
-No console da Oracle, confira a **Security List / NSG**: só 80 e 443 públicas e SSH restrito.
-
-Verificações de HTTPS e CORS, a partir de qualquer máquina:
-
-```bash
-curl -sI https://api.exemplo.com | head -n 5
-curl -s -D - -o /dev/null -H 'Origin: https://evil.example' https://api.exemplo.com/health
-curl -s -D - -o /dev/null -H 'Origin: https://USUARIO.github.io' https://api.exemplo.com/health
-```
-
-- O Pages é https, então a API também precisa ser (domínio e certificado válidos, por exemplo Caddy ou nginx com certbot).
-- Para a origem estranha **não** deve voltar `Access-Control-Allow-Origin`. Para a origem do Pages deve voltar exatamente essa origem, nunca `*`.
-- Se o login usar cookies entre domínios, use `SameSite=None; Secure` e proteção contra CSRF.
+No console da Oracle, confira a **Security List**: a única porta pública deve ser **22 (SSH)**. O bot não expõe porta alguma — o `/health` escuta apenas dentro do container (checado pelo docker healthcheck, `127.0.0.1` no container, não publicadão).
 
 Boas práticas:
 
-- aplicação rodando por `systemd`, com usuário sem privilégios;
-- segredos em arquivo de ambiente com permissão 600;
-- atualizações automáticas do sistema;
-- deploy com uma chave dedicada e de escopo restrito, guardada em GitHub Environments, e não a chave SSH pessoal.
+- acesso só por chave SSH (senha desativada no `sshd`);
+- `.env` com permissão 600;
+- atualizações automáticas do sistema (`unattended-upgrades`);
+- usuário comum (não root), com grupo `docker`.
 
-## 4. Backend
+## 4. Bot e Docker
 
-- Autenticação e autorização em toda rota que não seja pública.
-- Validação de toda entrada e consultas parametrizadas (contra SQL injection).
-- Limite de requisições nas rotas sensíveis.
-- Logs sem dados pessoais (LGPD) e respostas de erro sem stack trace.
-- Dependências: `npm audit` (Node), `pip-audit` (Python) ou OWASP Dependency-Check (Java/Maven), com Dependabot ativo (suporta npm, pip, Maven e GitHub Actions).
+- **Token:** do Discord Developer Portal, só no `.env` da VM e no `.env` local de dev (fora do repo). Se vazar: resetar o token no portal **antes** de qualquer outra coisa.
+- **Healthcheck:** `/health` deve responder **503** até pronto e **200** depois; `HEALTH_PORT=0` desliga o servidor (conta como saudável). O autoheal e o docker healthcheck dependem desse contrato.
+- **Resiliência em camadas** (verificar as três):
 
-### Projetos Java (Spring Boot + Maven)
+| Camada | Proteção | Sintoma quando falta |
+|---|---|---|
+| Crash | `restart: unless-stopped` | container morre e não volta |
+| Travado | `laro-autoheal` reinicia unhealthy | bot vivo mas sem responder |
+| Tudo morto | healthchecks.io (ping a cada 60s, period/grace 10 min) → e-mail | ninguém sabe que caiu |
+| VM em uso indevido | alarme Oracle CpuUtilization (opcional) | criptominerado na E2.1.Micro |
 
-**Pontos de atenção**
+- **Dependências:** `pip-audit -r src/requirements.lock --strict` roda no job `audit` da CI; Dependabot (pip, actions, docker) abre PRs semanais.
+- **Imagem base:** `python:3.15.2-alpine` — atualizações via Dependabot (ecosystem docker).
 
-- **Actuator:** em produção só o endpoint `health`; `management.endpoints.web.exposure.include=*` expõe `env`, `heapdump` e outros.
-- **Spring Security:** revise a `SecurityFilterChain`. Toda rota sensível exige autenticação, e a lista de `permitAll` deve ser curta. CSRF só pode ficar desligado em API sem sessão por cookie. Com cookies entre domínios, mantenha a proteção.
-- **CORS:** configure por `CorsConfigurationSource` com a origem do Pages. Nada de `@CrossOrigin("*")` nem `allowedOrigins("*")` junto com credenciais.
-- **Credenciais:** em `application*.properties` e `.yml` use placeholders (`${VARIAVEL}`), nunca valores. O perfil de produção lê tudo do ambiente da VM.
-- **SQL:** parâmetros nomeados ou `PreparedStatement`; nunca concatenar entrada do usuário.
-- **Logs:** `spring.jpa.show-sql` desligado em produção e sem dados pessoais.
-- **Build:** `target/` fora do Git.
+## 5. Segurança do bot
 
-**Conexão com o Neon.** A connection string do Neon começa com `postgresql://usuario:senha@host/banco`, que o JDBC não aceita direto. No Spring Boot, separe em três variáveis de ambiente:
+- **Entrada:** tudo que o bot processa vem do Discord. Comandos só com o prefixo `!`; partes soltas são strings — nada vira SQL direto (acesso ao banco por asyncpg **parametrizado**, `$1`).
+- **Permissões:** comandos admin (ex.: `!setmvpchannel`, `!setpingrole`) exigem a permissão Discord *Gerenciar Servidor* (checada no dispatcher `ADMIN_COMMANDS` em `event/on_message.py`). Melhoras futuras: checagem também por role no banco.
+- **Pings:** a role do aviso de respawn é pingada só no canal configurado; a lista de MVPs nunca menciona (allowed_mentions desativado no painel).
+- **Interações:** botões/selects do painel marcam `interaction.user` e só o dono da ação confirma (deleção);
+- **Logs:** sem conteúdo de mensagem de usuário; eventos nos logs são do ciclo de vida do bot (conexão, carga de settings, health).
+- Comandos via DM são ignorados (`message.guild is None` → return).
 
-```properties
-spring.datasource.url=jdbc:postgresql://${DB_HOST}/${DB_NAME}?sslmode=require
-spring.datasource.username=${DB_USER}
-spring.datasource.password=${DB_PASSWORD}
-```
+## 6. CI e proteção da branch
 
-Para migrações com a role separada (privilégios maiores que os da aplicação), o Spring Boot permite credenciais próprias do Flyway:
-
-```properties
-spring.flyway.user=${DB_MIGRATION_USER}
-spring.flyway.password=${DB_MIGRATION_PASSWORD}
-```
-
-Confira na documentação do Neon as recomendações do driver ao usar o pooler.
-
-**Comandos de leitura**, na raiz do repositório:
-
-```bash
-grep -rEn 'management\.endpoints\.web\.exposure\.include|spring\.datasource\.password *=|password *=|secret *=' src/main/resources
-grep -rEn 'csrf|permitAll|anyRequest|authorizeHttpRequests' src/main
-grep -rEn '@CrossOrigin|allowedOrigins' src/main
-grep -rEn 'show[-_]sql' src/main/resources
-grep -rEn 'createStatement\(|"(SELECT|INSERT|UPDATE|DELETE) [^"]*" *\+' src/main
-./mvnw -q dependency:tree
-./mvnw versions:display-dependency-updates
-./mvnw org.owasp:dependency-check-maven:check
-```
-
-O Dependency-Check pode pedir uma chave de API da NVD para rodar rápido. O Dependabot (`maven`) abre os PRs de atualização, inclusive do Spring Boot.
-
-**Testes e CI**
-
-- `./mvnw verify` roda os testes e as verificações do build; é o comando da CI e o que se executa antes de concluir uma tarefa.
-- Testes de caracterização das rotas com JUnit 5 e `MockMvc` (ou `@SpringBootTest`); Postgres de teste via Testcontainers (no Spring Boot 3.1 ou superior, com `@ServiceConnection`) ou serviço da CI.
-- Na CI, instale o JDK da versão do projeto com cache do Maven:
-
-```yaml
-- uses: actions/setup-java@v5   # troque pela versão atual mantida pelo Dependabot
-  with:
-      distribution: temurin
-      java-version: "21"        # use a versão do projeto
-      cache: maven
-- run: ./mvnw -B verify
-```
-
-## 5. Rede de segurança por camada
-
-| Camada | Proteção |
-|---|---|
-| Frontend | Snapshot de renderização (ex.: jsdom), testes dos pontos de injeção de HTML e verificação de carga |
-| Backend | Testes de caracterização das rotas (gravam as respostas atuais e provam que não mudaram), testes de integração (em Spring Boot: JUnit 5 com MockMvc e Postgres via Testcontainers ou serviço da CI), análise estática |
-| Banco | Migrações testadas do zero na CI com Postgres efêmero |
-| Dependências | Dependabot, `npm audit` ou `pip-audit` |
-
-Confirme que cada teste novo **falha** no código antigo antes de confiar nele.
-
-## 6. CI e deploy do Pages
-
-- A CI gera exatamente o que será publicado no Pages.
-- `permissions` mínimas (`contents: read`); as GitHub Actions ficam atualizadas.
-- Proteção da branch principal: PR, check obrigatório e método de merge definido no `handoff.md`.
-- PRs abertos por workflows com o `GITHUB_TOKEN` (autor `github-actions[bot]`) ficam em *Action required* e só rodam a CI depois de **Approve workflows to run**.
+- Workflow único (`.github/workflows/ci.yml`), `permissions: contents: read`, três jobs: `checks` (ruff + pytest em 3.13/3.14/3.15), `types` (pyright basic) e `audit` (pip-audit).
+- pyright resolve imports via `.venv` (`pyrightconfig.json`, `venvPath`); o job `types` cria o `.venv` no runner e instala também `pytest` (não está no lockfile).
+- Dependabot atualiza o próprio `ci.yml` (ecosystem github-actions); conferir `actions/checkout@vN`/`setup-python@vN` quando abrir os bumps.
+- Proteção da `main`: ruleset `protege-main` (detalhes e como conferir: `docs/configuracao-repositorio.md`).
+- Fluxo: PR → checks verdes → **Rebase and merge**. Nunca push direto.
 
 ## O que o agente não deve fazer sem confirmação
 
-DROP, TRUNCATE, apagar volumes ou branches, alterar firewall ou Security List, reiniciar serviços, aplicar migração na produção, reescrever o histórico do Git ou fazer push forçado.
+DROP, TRUNCATE, apagar volumes ou branches, mudar firewall ou Security List, reiniciar serviços na VM, aplicar migração na produção, reescrever o histórico do Git ou fazer push forçado. Na VM, o agente só **sugere comandos de leitura**; o dono executa e devolve a saída mascarada.
