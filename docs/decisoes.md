@@ -108,3 +108,10 @@ Camadas, do mais interno ao mais externo (ver `docs/hosting-oracle.md`):
 
 1. ~~`.env` real (token do bot + `DATABASE_URL`) para smoke test com Discord + Postgres~~ **Feito**: bot conectou via Docker (`docker compose up -d`), sincronizou slash commands e subiu o pool do Postgres (22/11/2026).
 2. ~~Validação do SQL num Postgres de verdade~~ **Feito**: o Postgres do Docker aplicou `sql/laro.sql` + `sql/seed_mvp_latam.sql` na primeira subida; `SELECT count(*) FROM mvp` = 64 (22/11/2026). A validação estática continua disponível via `scripts/validate_sql.py`.
+
+## CI, Dependabot e proteção de branch (22/11/2026)
+
+- **CI** (`.github/workflows/ci.yml`): ruff check + ruff format + pytest em Python 3.13 e 3.14, mais job de `pip-audit` contra o lockfile. Instalação pelo `src/requirements.lock` (closure de runtime pinado) em vez do `requirements.txt` (só diretas). Permissões do workflow reduzidas a `contents: read`.
+- **Dependabot** (`.github/dependabot.yml`): PRs semanais para pip (`/src`), github-actions e docker.
+- **Creds do Postgres**: saíram do compose para o `.env` da raiz (`POSTGRES_*`, interpoladas com defaults só de dev local); na VM a senha deve ser trocada antes do primeiro `compose up` (ver `docs/hosting-oracle.md`).
+- **Branch protection da `main`**: decisão é ativar exigiências mínimas depois do primeiro push (com o CI existindo, o status check fica disponível): *Require a pull request before merging* **não** se aplica ao fluxo solo atual (commits diretos na `main`); o que se ativa é **Require status checks to pass** apontando para o job `checks` (e `audit`) do CI, mais a regra de que admins também obedecem. Ajustar se o fluxo mudar para PRs.

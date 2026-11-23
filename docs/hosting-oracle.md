@@ -37,7 +37,8 @@ sudo systemctl enable --now docker
 git clone https://github.com/EduardoSFragoso/laro_mvp_tracker.git
 cd laro_mvp_tracker
 cp .env.example .env
-nano .env   # BOT_USER_TOKEN=... (DATABASE_URL padrão do compose já serve)
+nano .env   # BOT_USER_TOKEN=... e POSTGRES_PASSWORD=<senha da VM>
+            # (DATABASE_URL padrão do compose já serve)
 docker compose up -d --build
 docker compose logs -f --no-color bot   # Ctrl+C sai sem parar o bot
 ```
