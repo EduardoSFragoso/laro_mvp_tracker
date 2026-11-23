@@ -1,7 +1,7 @@
-# CI do laro: lint, formatação e testes em duas versões do Python
-# (3.13 = imagem Docker, 3.14 = venv de dev). Auditoria de dependências
-# roda junto para pegar CVEs cedo.
-# Nota: actions/checkout@v4 e actions/setup-python@v5 — conferir versões
+# CI do laro: lint, formatação e testes em três versões do Python
+# (3.13 = legado, 3.14 = venv de dev, 3.15 = imagem Docker/produção).
+# Auditoria de dependências roda junto para pegar CVEs cedo.
+# Nota: actions/checkout@v7 e actions/setup-python@v7 — conferir versões
 # maiores novas quando o Dependabot abrir PR.
 name: CI
 
@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.13', '3.14']
+        python-version: ['3.13', '3.14', '3.15']
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
