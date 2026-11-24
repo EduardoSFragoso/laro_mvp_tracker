@@ -56,6 +56,9 @@ Banco: `docker compose exec db psql -U postgres -d laro` (porta NÃO publicada f
 
 - `/health` deve responder **503** até `tracker_ready` e **200** depois (autoheal e o docker healthcheck dependem disso). `HEALTH_PORT=0` desliga o servidor de health (conta como saudável).
 - Heartbeat: `monitoring_service.run_heartbeat` pinga `HEARTBEAT_URL` a cada `HEARTBEAT_SECS` (60s). Monitor: healthchecks.io (period/grace 10 min) → e-mail `duds.fragoso@gmail.com`.
+- Aviso de janela de respawn: **mensagem viva** (`ChannelState.notification_message`, título `:bell: Janelas de respawn abertas`) — fica no canal enquanto houver janela aberta (`r1 <= 0 <= r2`) e é deletada quando a última fecha. Exceção na limpeza (`is_msg_can_be_deleted`); no restart, `init_channel` re-adopta o aviso existente e apaga duplicados. Ping só em **janela nova**, na role `guild.id_notification_role` (`!setpingrole`/`!unsetpingrole`); **nunca** `@here`/`@everyone` (`AllowedMentions.none()` ou `roles=[role]`).
+- Flag de aviso persistida: coluna `mvp_guild.notified` (NOT NULL, default FALSE) — gravada `TRUE` quando o aviso sai, `FALSE` ao re-rastrear (`update_track_time`) e restaurada em `load_db_entries` (restart não re-pinga janela já avisada).
+- Gate de admin: `ADMIN_COMMANDS` em `event/on_message.py` (`!timezone`, `!unsettimezone`, `!setmvpchannel`, `!unsetmvpchannel`, `!setpingrole`, `!unsetpingrole`, `!clean`) exigem a permissão **Gerenciar Servidor** do usuário. `!track`, `!woe` e `!settings` (leitura) ficaram abertos.
 - Painel do canal de tracking: embed amarela única com `title` 👑 MVPs + `thumbnail`; `!mobile` alterna entre 3 colunas e layout 1 coluna. Discord **não** permite `#` headers nem fonte custom em embed (testado em 2026-11; preview de 2 embeds foi rejeitado pelo dono — manter formato atual).
 - `bot.guild_states: dict[int, GuildState]` — ao remover servidor, `pop(id, None)`; nunca armazenar `None` (quebra `on_ready`).
 - Comandos via DM são ignorados (`message.guild is None` → return).
@@ -69,6 +72,8 @@ Banco: `docker compose exec db psql -U postgres -d laro` (porta NÃO publicada f
 - VM E2.1.Micro tem 1 GB RAM — cuidado com sidecars pesados (autoheal ~10 MB, ok).
 - `.env` da VM: senha do Postgres definida manualmente no setup (símbolos `$`, `@`, `:/` perigosos em shell); guardada no gerenciador de senhas do dono.
 - `cron` não vem instalada na VM Ubuntu (miniatura Oracle): `sudo apt install cron` antes de criar crontab.
+- Colunas novas do esquema: `guild.id_notification_role` e `mvp_guild.notified` (NOT NULL default FALSE). Um banco/volume criado antes dessas features quebra o load (`db_guild['id_notification_role']` via `SELECT *`). Migração manual: `ALTER TABLE guild ADD COLUMN IF NOT EXISTS id_notification_role bigint;` e `ALTER TABLE mvp_guild ADD COLUMN IF NOT EXISTS notified boolean NOT NULL DEFAULT FALSE;`
+- Local (Windows): o `db` não publica porta (só existe na rede do compose; acesse com `docker compose exec db psql ...`). Se descomentar o `ports` p/ dev, o bind em `127.0.0.1:5432` pode falhar por faixa reservada do WinNAT/Hyper-V ("bind: ... proibida pelas permissões de acesso").
 
 ## Resiliência (como está em produção)
 
