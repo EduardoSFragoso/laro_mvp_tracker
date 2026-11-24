@@ -43,14 +43,27 @@ git log --all --diff-filter=A --name-only --format= | grep -Ei '\.env|\.pem|\.ke
 - O Postgres **não publica porta**: só a rede interna do compose (`docker-compose.yml`, comentário no serviço `db`). Acesso do host via `docker compose exec db psql -U postgres -d laro`.
 - `DATABASE_URL` só no `.env` da VM — nunca no repo, nunca no frontend (não existe frontend).
 - O projeto é single-tenant e usa a role dona do banco (`POSTGRES_USER`). Aceito por simplicidade; revisitar se um dia expor API.
-- **Backup** (o volume `laro_pgdata` na VM é a única cópia dos dados):
+- **Backup** (cópia única fora do volume `laro_pgdata` na VM: `~/laro_mvp_tracker/backup_sim_teste.sql`, dump de 2026-11-23; arquivo pequeno porque os dados do MVP ainda não incluem históricos acumulados):
 
 ```bash
 # dump de leitura (nome de arquivo com data, sem pessoal):
 docker compose exec db pg_dump -U postgres laro > backup_$(date +%F).sql
 ```
 
-- Restauro testado uma vez (2026-11-23, migração pra VM nova): `DROP SCHEMA public CASCADE; CREATE SCHEMA public` + `psql < dump`. Documentado no histórico da sessão; refazer em simulação antes de confiar numa emergência.
+- Restaurações do dump já validadas:
+  - 2026-11-23, migração pra VM nova: `DROP SCHEMA public CASCADE; CREATE SCHEMA public` + `psql < dump` no banco de produção.
+  - 2026-11-23, **simulação em container descartável** (procedimento abaixo): dump de produção (11K, 6 tabelas) restaurado num `postgres:16` paralelo (sem porta publicada, volume temporário) com `psql -v ON_ERROR_STOP=1` — zero erros e `count(*)` de todas as tabelas idênticos a produção.
+
+```bash
+# simulação de restore (não toca na produção; container morre depois):
+cd ~/laro_mvp_tracker
+docker compose exec db pg_dump -U postgres laro > backup_sim_teste.sql
+docker run -d --name laro-db-teste -e POSTGRES_PASSWORD=teste -e POSTGRES_DB=laro postgres:16
+# esperar: for i in $(seq 1 30); do docker exec laro-db-teste pg_isready -U postgres -d laro && break; sleep 1; done
+docker cp backup_sim_teste.sql laro-db-teste:/tmp/
+docker exec laro-db-teste psql -U postgres -d laro -v ON_ERROR_STOP=1 -f /tmp/backup_sim_teste.sql | tail -15
+docker rm -f laro-db-teste
+```
 
 ## 3. VM Oracle
 
@@ -86,9 +99,11 @@ Boas práticas:
 | Crash | `restart: unless-stopped` | container morre e não volta |
 | Travado | `laro-autoheal` reinicia unhealthy | bot vivo mas sem responder |
 | Tudo morto | healthchecks.io (ping a cada 60s, period/grace 10 min) → e-mail | ninguém sabe que caiu |
-| VM em uso indevido | alarme Oracle CpuUtilization (opcional) | criptominerado na E2.1.Micro |
+| VM em uso indevido | alarme Oracle `laro-cpu-alta` (CpuUtilization > 80% por 10 min, OCI Notifications → e-mail, repeat 15 min) | criptominerado na E2.1.Micro |
 
 - **Dependências:** `pip-audit -r src/requirements.lock --strict` roda no job `audit` da CI; Dependabot (pip, actions, docker) abre PRs semanais.
+- **Análise de código:** CodeQL pelo setup padrão do GitHub (Security → Code scanning; Python + Actions workflows, on push + semanal) — fora do `ci.yml`, gerenciado pelo GitHub. Alerts aparecem em Security → Code scanning; aliatar não é aceitar: triar antes.
+- **Reports de vulnerabilidade:** `SECURITY.md` aponta para o private vulnerability reporting (ligado nas configurações do repo, canal privado na aba Security) — nenhum e-mail exposto.
 - **Imagem base:** `python:3.15.2-alpine` — atualizações via Dependabot (ecosystem docker).
 
 ## 5. Segurança do bot

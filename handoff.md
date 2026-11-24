@@ -76,10 +76,9 @@ Banco: `docker compose exec db psql -U postgres -d laro` (porta NÃO publicada f
 | Crash (processo morre) | `restart: unless-stopped` |
 | Travado (healthcheck unhealthy) | container `laro-autoheal` reinicia (varre a cada 60s) |
 | Tudo morto / VM fora | healthchecks.io → e-mail |
-| Pendente (opcional) | alarme Oracle CpuUtilization → tópico `alertas-laro` |
+| VM sobrecarregada | alarme Oracle `laro-cpu-alta` (CpuUtilization > 80% por 10 min) → tópico `alertas-laro` → e-mail |
 
 ## Pendências
 
-- Alarme Oracle de CPU (tópico/subscription a confirmar; dentro do Always Free).
-- `stat -c '%a %U:%G %n' ~/laro_mvp_tracker/.env` na VM (esperado `600`).
 - Assinatura de commits: se um dia exigir, testar em PR descartável (doc avisa que Rebase and merge pode bloqear).
+- Backups do Postgres: dump manual (`docs/auditoria-infra.md`, seção 2); simulação de restore validada em 2026-11-23 em container descartável. Pendências futuras opcionais: dump agendado (cron na VM) e rotação.
