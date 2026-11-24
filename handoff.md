@@ -68,6 +68,7 @@ Banco: `docker compose exec db psql -U postgres -d laro` (porta NÃO publicada f
 - O pyrightresolve imports via `.venv` (`venvPath`); em CI o job `types` cria `.venv` e instala também `pytest` (não está no lockfile).
 - VM E2.1.Micro tem 1 GB RAM — cuidado com sidecars pesados (autoheal ~10 MB, ok).
 - `.env` da VM: senha do Postgres definida manualmente no setup (símbolos `$`, `@`, `:/` perigosos em shell); guardada no gerenciador de senhas do dono.
+- `cron` não vem instalada na VM Ubuntu (miniatura Oracle): `sudo apt install cron` antes de criar crontab.
 
 ## Resiliência (como está em produção)
 
@@ -77,8 +78,9 @@ Banco: `docker compose exec db psql -U postgres -d laro` (porta NÃO publicada f
 | Travado (healthcheck unhealthy) | container `laro-autoheal` reinicia (varre a cada 60s) |
 | Tudo morto / VM fora | healthchecks.io → e-mail |
 | VM sobrecarregada | alarme Oracle `laro-cpu-alta` (CpuUtilization > 80% por 10 min) → tópico `alertas-laro` → e-mail |
+| Perda do volume do banco | `~/backup_laro.sh` na VM, cron `0 4 * * *`: dump+gzip → OCI `laro-db-backups` (objeto único via PAR de escrita) → rotação local 7 dias → ping no healthchecks `backup-laro` (grace 1h). URLs secretas em `~/.laro_par_url` e `~/.laro_backup_hc_url` (600, fora do repo). Detalhes: `docs/auditoria-infra.md` seção 2 |
 
 ## Pendências
 
 - Assinatura de commits: se um dia exigir, testar em PR descartável (doc avisa que Rebase and merge pode bloqear).
-- Backups do Postgres: dump manual (`docs/auditoria-infra.md`, seção 2); simulação de restore validada em 2026-11-23 em container descartável. Pendências futuras opcionais: dump agendado (cron na VM) e rotação.
+- Backup: automatizado desde 2026-11-23 (detalhes na tabela de resiliência e em `docs/auditoria-infra.md` seção 2). Primeira rodada pela cron ainda a validar (conferir bucket + `backup-laro` verde depois das 04:00 UTC). Revogar/renovar a URL do PAR antes de expirar (2028). Se desligar ou trocar o fluxo, lembrar de limpar os segredos `~/.laro_par_url` / `~/.laro_backup_hc_url` na VM.
