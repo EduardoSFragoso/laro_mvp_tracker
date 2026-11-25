@@ -10,4 +10,4 @@ from laro.service import channel_service
 async def setmvpchannel_core(bot: Bot, message: discord.Message) -> None:
     if not isinstance(message.channel, discord.TextChannel):
         return
-    await channel_service.confirm_set_channel(bot, message.channel, TrackType.MVP)
+    await channel_service.confirm_set_channel(bot, message.channel, TrackType.MVP, requester_id=message.author.id)

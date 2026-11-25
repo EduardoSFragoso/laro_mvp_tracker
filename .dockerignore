@@ -1,4 +1,11 @@
 # flyctl launch added from .gitignore
-**\__pycache__
-**\*.env
-**\.vscode
+**/__pycache__
+**/.vscode
+.env
+.env.*
+**/.env
+**/.env.*
+*.pem
+*.key
+**/*.pem
+**/*.key

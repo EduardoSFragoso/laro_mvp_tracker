@@ -113,6 +113,8 @@
 
 ## Uso de assistentes de IA
 
+- Na conversa, responda de forma simples e direta. Apresente uma ação por vez quando depender da pessoa; conclua em sequência o trabalho interno que não depende dela, sem pedir input entre etapas lógicas.
+- Não repita avisos ou pendências já comunicados e reconhecidos. Volte a mencioná-los somente se houver mudança, nova informação ou se a pessoa perguntar.
 - Considere código gerado por IA como uma sugestão que precisa de revisão, não como uma implementação automaticamente confiável.
 - Antes de aceitar uma sugestão, verifique sua correção, segurança, compatibilidade com a arquitetura e aderência aos padrões do projeto.
 - Entenda o código antes de usá-lo ou enviá-lo ao repositório; consiga explicar o que cada trecho faz.

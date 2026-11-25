@@ -12,6 +12,7 @@ class Bot(discord.Client):
     """The bot client plus the shared runtime state of the application."""
 
     def __init__(self, settings: Settings, **kwargs):
+        kwargs.setdefault('allowed_mentions', discord.AllowedMentions.none())
         super().__init__(**kwargs)
         self.settings = settings
         self.pool: Pool | None = None

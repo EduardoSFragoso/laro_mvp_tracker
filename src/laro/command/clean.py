@@ -6,6 +6,7 @@ from laro.domain.bot import Bot
 from laro.domain.track_type import TrackType
 from laro.service import channel_service
 from laro.util.coroutine_util import run_coro
+from laro.util.interaction_util import is_confirmation_owner_admin
 
 
 async def clean_core(bot: Bot, message: discord.Message) -> None:
@@ -26,16 +27,20 @@ async def clean_core(bot: Bot, message: discord.Message) -> None:
     await run_coro(
         message.channel.send(
             'This will clean the list. Are you sure?',
-            view=CleanView(bot=bot, trackType=channel_state.type),
+            view=CleanView(bot=bot, trackType=channel_state.type, requester_id=message.author.id),
         )
     )
 
 
 class CleanView(discord.ui.View):
-    def __init__(self, *, timeout=180, bot: Bot, trackType: TrackType):
+    def __init__(self, *, timeout=180, bot: Bot, trackType: TrackType, requester_id: int):
         super().__init__(timeout=timeout)
+        self.requester_id = requester_id
         self.add_item(CleanYesButton(bot=bot, trackType=trackType))
         self.add_item(CleanNoButton())
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        return await is_confirmation_owner_admin(interaction, self.requester_id)
 
 
 class CleanYesButton(discord.ui.Button):
