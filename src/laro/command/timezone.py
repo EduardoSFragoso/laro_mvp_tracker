@@ -19,10 +19,10 @@ async def timezone_core(bot: Bot, message: discord.Message, timezone: str) -> No
         guild_state = bot.get_guild_state(message.guild.id)
         if guild_state is None:
             return
-        guild_state.timezone = timezone
         conn = await bot.pool_acquire()
         try:
             await conn.execute('UPDATE guild SET timezone=$2 WHERE id=$1', message.guild.id, timezone)
+            guild_state.timezone = timezone
         finally:
             await bot.pool_release(conn)
         msg = 'Custom timezone set to ' + timezone + '.'

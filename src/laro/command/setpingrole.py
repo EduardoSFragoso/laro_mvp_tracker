@@ -25,10 +25,10 @@ async def setpingrole_core(bot: Bot, message: discord.Message) -> None:
         msg = 'Use: `' + prefix + 'setpingrole @role` (ou `' + prefix + 'setpingrole <id da role>`).'
         await run_coro(message.channel.send(msg))
         return
-    guild_state.id_notification_role = role.id
     conn = await bot.pool_acquire()
     try:
         await conn.execute('UPDATE guild SET id_notification_role=$2 WHERE id=$1', guild.id, role.id)
+        guild_state.id_notification_role = role.id
     finally:
         await bot.pool_release(conn)
     msg = 'Role de notificação configurada: ' + role.mention + '.'
@@ -44,10 +44,10 @@ async def unsetpingrole_core(bot: Bot, message: discord.Message) -> None:
     guild_state = bot.get_guild_state(guild.id)
     if guild_state is None:
         return
-    guild_state.id_notification_role = None
     conn = await bot.pool_acquire()
     try:
         await conn.execute('UPDATE guild SET id_notification_role=NULL WHERE id=$1', guild.id)
+        guild_state.id_notification_role = None
     finally:
         await bot.pool_release(conn)
     prefix = bot.settings.command_prefix
