@@ -1,18 +1,22 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Coroutine
+from typing import Any
+
+import discord
 
 
 log = logging.getLogger(__name__)
 
 
-async def run_coro(coroutine):
-    """Run a coroutine, logging (instead of raising) any unexpected error.
+async def run_coro[T](coroutine: Coroutine[Any, Any, T]) -> T | None:
+    """Run a Discord API coroutine, logging expected API failures.
 
-    Discord callbacks should never crash the whole bot because a single
-    message/response failed, so this is the default wrapper used everywhere.
+    Programming errors should remain visible to the caller instead of being
+    mistaken for a recoverable Discord failure.
     """
     try:
         return await coroutine
-    except Exception:
-        log.error('Unexpected error.', exc_info=True)
+    except discord.DiscordException:
+        log.warning('Discord request failed.', exc_info=True)
