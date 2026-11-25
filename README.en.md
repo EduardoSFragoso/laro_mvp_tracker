@@ -84,7 +84,6 @@ When inviting the bot ([Developer Portal → OAuth2 → URL Generator](https://d
 - **Embed Links** (the table and announcements are embeds)
 - **Manage Messages** (deletes non-prefix messages and the closed-window announcement)
 - **Read Message History** (rebuilds the table/help on restart)
-- **Add Reactions** (➕ TRACK MVP button)
 
 And in the **Bot** tab of the portal, enable the **Message Content Intents** *privileged intent* (`!track` reads message text).
 

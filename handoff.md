@@ -71,6 +71,7 @@ Banco: `docker compose exec db psql -U postgres -d laro` (porta NÃO publicada f
 - `app.main` supervisiona os workers com `asyncio.TaskGroup`, fecha o cliente e o pool na saída; falha fatal ao inicializar o banco fecha o bot e deixa o healthcheck sinalizar a indisponibilidade.
 - `update_track_time` grava entrada e histórico com `ON CONFLICT` dentro de uma transação; atualiza o estado em memória somente após o commit.
 - Alterações de configuração de servidor persistem no banco antes de atualizar o estado em memória; remover um servidor apaga os dados relacionados em uma única transação.
+- Desvincular o canal de MVP mantém rastreios e histórico persistidos; ao definir um canal novamente, o serviço restaura esses dados antes de publicá-lo no estado em memória.
 - Componentes de interação do canal ficam em `laro/ui/channel_views.py`; callbacks importam o serviço localmente para evitar ciclo de importação.
 - `run_coro` captura falhas esperadas da API Discord. Erros de programação propagam para o chamador e ficam visíveis.
 - O bot roda como usuário sem privilégios no container. O `autoheal` usa versão fixada e não precisa de rede; no deploy, atualizar essa imagem e recriar `bot` e `autoheal` conforme o comando acima.

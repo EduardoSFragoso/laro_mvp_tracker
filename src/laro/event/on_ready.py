@@ -57,8 +57,10 @@ async def load_database(bot: Bot, conn) -> None:
     db_guild_list = await conn.fetch('SELECT * FROM guild')
     for db_guild in db_guild_list:
         if channel_service.get_guild_from_bot(bot, db_guild['id']) is None:
-            await conn.execute('DELETE FROM mvp_guild WHERE id_guild=$1', db_guild['id'])
-            await conn.execute('DELETE FROM guild WHERE id=$1', db_guild['id'])
+            async with conn.transaction():
+                await conn.execute('DELETE FROM mvp_guild WHERE id_guild=$1', db_guild['id'])
+                await conn.execute('DELETE FROM mvp_guild_log WHERE id_guild=$1', db_guild['id'])
+                await conn.execute('DELETE FROM guild WHERE id=$1', db_guild['id'])
     for guild in bot.guilds:
         guild_state = GuildState(id_guild=guild.id)
         bot.guild_states[guild.id] = guild_state

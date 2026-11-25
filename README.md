@@ -84,7 +84,6 @@ Ao convidar o bot ([Developer Portal → OAuth2 → URL Generator](https://disco
 - **Embed Links** (a tabela e os avisos são embeds)
 - **Manage Messages** (apaga mensagens sem prefixo e o aviso de janela fechada)
 - **Read Message History** (reconstrói a tabela/ajuda do canal ao reiniciar)
-- **Add Reactions** (botão ➕ TRACK MVP)
 
 E no portal, aba **Bot**, ative a *privileged intent* **Message Content Intents** (o `!track` lê o texto da mensagem).
 
