@@ -15,9 +15,12 @@ src/
         command/            # comandos !foo (dispatcher em event/on_message.py)
         event/              # handlers de eventos (on_ready, on_message, ...)
         service/
-            channel_service.py  # painel do canal de tracking (embed, botões, mobile)
+            channel_service.py  # lifecycle, painel e limpeza do canal
+            tracking_service.py # resolução de MVP e gravação de rastreios
             event_service.py    # eventos WOE (TypedDicts de weekly_event.py)
             monitoring_service.py  # /health + heartbeat (HEARTBEAT_URL)
+        ui/
+            channel_views.py    # views, botões, select e modal do Discord
         timer/              # event_timer (avisos de respawn)
         util/               # track_util (cálculo de janelas de respawn)
 sql/                        # schema + seed LATAM (usado na 1a subida do volume)
@@ -65,6 +68,10 @@ Banco: `docker compose exec db psql -U postgres -d laro` (porta NÃO publicada f
 - Docker instala `src/requirements.lock`; ao atualizar dependências, manter o lockfile coerente com `src/requirements.txt`. `.dockerignore` exclui `.env`, arquivos de chave privada e diretórios locais de desenvolvimento.
 - Painel do canal de tracking: embed amarela única com `title` 👑 MVPs + `thumbnail`; `!mobile` alterna entre 3 colunas e layout 1 coluna. Discord **não** permite `#` headers nem fonte custom em embed (testado em 2026-11; preview de 2 embeds foi rejeitado pelo dono — manter formato atual).
 - `on_ready` reutiliza `bot.pool` após reconexões do gateway; não criar pool substituto sem fechar o atual. `tracker_ready` volta a `False` enquanto a conexão é revalidada.
+- `app.main` supervisiona os workers com `asyncio.TaskGroup`, fecha o cliente e o pool na saída; falha fatal ao inicializar o banco fecha o bot e deixa o healthcheck sinalizar a indisponibilidade.
+- `update_track_time` grava entrada e histórico com `ON CONFLICT` dentro de uma transação; atualiza o estado em memória somente após o commit.
+- Componentes de interação do canal ficam em `laro/ui/channel_views.py`; callbacks importam o serviço localmente para evitar ciclo de importação.
+- `run_coro` captura falhas esperadas da API Discord. Erros de programação propagam para o chamador e ficam visíveis.
 - O bot roda como usuário sem privilégios no container. O `autoheal` usa versão fixada e não precisa de rede; no deploy, atualizar essa imagem e recriar `bot` e `autoheal` conforme o comando acima.
 - Notificação só marca `notified` depois que o envio/edição no Discord funciona. `notification_pending` vive apenas em memória e permite nova tentativa enquanto a janela continua aberta.
 - `bot.guild_states: dict[int, GuildState]` — ao remover servidor, `pop(id, None)`; nunca armazenar `None` (quebra `on_ready`).

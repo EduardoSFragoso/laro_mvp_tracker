@@ -65,12 +65,21 @@ async def _run_timer(bot: Bot) -> None:
 async def main() -> None:
     from laro.service import monitoring_service
 
-    await asyncio.gather(
-        _run_bot(bot),
-        _run_timer(bot),
-        monitoring_service.run_health_server(bot),
-        monitoring_service.run_heartbeat(bot),
-    )
+    try:
+        async with asyncio.TaskGroup() as task_group:
+            worker_tasks = [
+                task_group.create_task(_run_timer(bot)),
+                task_group.create_task(monitoring_service.run_health_server(bot)),
+                task_group.create_task(monitoring_service.run_heartbeat(bot)),
+            ]
+            bot_task = task_group.create_task(_run_bot(bot))
+            await bot_task
+            for task in worker_tasks:
+                task.cancel()
+    finally:
+        await bot.close()
+        if bot.pool is not None:
+            await bot.pool.close()
 
 
 if __name__ == '__main__':

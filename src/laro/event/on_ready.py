@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import logging
-import os
 
 import asyncpg
 import discord
 
 from laro.domain.bot import Bot
+from laro.domain.exceptions import BotConfigurationError
 from laro.domain.models import ChannelState, GuildState, Mvp
 from laro.domain.track_type import TrackType
 from laro.service import channel_service, entry_service
@@ -25,13 +25,19 @@ async def on_ready(bot: Bot) -> None:
             bot.pool = await asyncpg.create_pool(dsn=bot.settings.database_url)
         except (asyncpg.PostgresError, OSError) as e:
             log.error(f'Error on database pool creation: {e}')
-            os._exit(42)
+            await bot.close()
+            return
 
-    conn = await bot.pool_acquire()
     try:
-        await load_database(bot, conn)
-    finally:
-        await bot.pool_release(conn)
+        conn = await bot.pool_acquire()
+        try:
+            await load_database(bot, conn)
+        finally:
+            await bot.pool_release(conn)
+    except Exception:
+        log.exception('Failed to initialize the tracker; closing the bot.')
+        await bot.close()
+        return
 
     bot.tracker_ready = True
 
@@ -45,8 +51,7 @@ async def load_database(bot: Bot, conn) -> None:
     meta_sql = "SELECT * FROM pg_catalog.pg_tables WHERE schemaname='public' and tablename='mvp'"
     db_table_list = await conn.fetch(meta_sql)
     if len(db_table_list) == 0:
-        log.error('Initial database structure not found.')
-        os._exit(42)
+        raise BotConfigurationError('Initial database structure not found.')
 
     log.info('Load servers settings.')
     db_guild_list = await conn.fetch('SELECT * FROM guild')
