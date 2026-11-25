@@ -14,6 +14,7 @@ from laro.service import entry_service
 from laro.util import track_util
 from laro.util.coroutine_util import run_coro
 from laro.util.date_util import get_dt_now, get_local_tzinfo
+from laro.util.interaction_util import is_confirmation_owner_admin
 
 
 log = logging.getLogger(__name__)
@@ -570,7 +571,7 @@ async def unset_channel(bot: Bot, channel: discord.TextChannel, trackType: Track
     await run_coro(channel.send(trackType.desc + ' channel unset.'))
 
 
-async def confirm_set_channel(bot: Bot, channel: discord.TextChannel, trackType: TrackType) -> None:
+async def confirm_set_channel(bot: Bot, channel: discord.TextChannel, trackType: TrackType, requester_id: int) -> None:
     validate_msg = validate_channel(bot, channel)
     if validate_msg is not None:
         await run_coro(channel.send(validate_msg))
@@ -578,7 +579,7 @@ async def confirm_set_channel(bot: Bot, channel: discord.TextChannel, trackType:
     await run_coro(
         channel.send(
             'This will remove all messages from this channel. Are you sure?',
-            view=SetChannelView(bot=bot, trackType=trackType),
+            view=SetChannelView(bot=bot, trackType=trackType, requester_id=requester_id),
         )
     )
 
@@ -695,10 +696,14 @@ async def update_channel_message(bot: Bot, channel_state: ChannelState) -> None:
 
 
 class SetChannelView(discord.ui.View):
-    def __init__(self, *, timeout=180, bot: Bot, trackType: TrackType):
+    def __init__(self, *, timeout=180, bot: Bot, trackType: TrackType, requester_id: int):
         super().__init__(timeout=timeout)
+        self.requester_id = requester_id
         self.add_item(SetChannelYesButton(bot=bot, trackType=trackType))
         self.add_item(SetChannelNoButton())
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        return await is_confirmation_owner_admin(interaction, self.requester_id)
 
 
 class SetChannelYesButton(discord.ui.Button):
