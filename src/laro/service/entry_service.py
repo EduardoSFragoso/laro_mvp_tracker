@@ -3,9 +3,10 @@ from __future__ import annotations
 from collections import Counter
 
 import asyncpg
+from asyncpg.pool import PoolConnectionProxy
 
 from laro.domain.bot import Bot
-from laro.domain.models import EntryLog, Mvp
+from laro.domain.models import ChannelState, EntryLog, Mvp
 from laro.domain.track_type import TrackType
 from laro.util import track_util
 
@@ -65,55 +66,75 @@ def ac_entries(bot: Bot, query: str) -> list[tuple[str, str]]:
 
 async def load_db_entries(bot: Bot, conn: asyncpg.Connection) -> None:
     db_entry_guild_list = await conn.fetch('SELECT * FROM mvp_guild')
-    for db_entry_guild in db_entry_guild_list:
-        guild_state = bot.guild_states.get(db_entry_guild['id_guild'])
-        if guild_state is None:
-            continue
-        entry = next(
-            (x for x in bot.mvp_list if x.id == db_entry_guild['id_mvp']),
-            None,
-        )
-        if entry is None:
-            continue
+    db_entry_log_list = await conn.fetch('SELECT * FROM mvp_guild_log ORDER BY date DESC')
+    entries_by_id = {entry.id: entry for entry in bot.mvp_list}
+    for guild_state in bot.guild_states.values():
         channel_state = guild_state.get_channel_state(TrackType.MVP)
         if channel_state is None:
+            continue
+        await _restore_channel_entries(
+            bot,
+            conn,
+            channel_state,
+            db_entry_guild_list,
+            db_entry_log_list,
+            entries_by_id,
+        )
+
+
+async def load_channel_entries(
+    bot: Bot, conn: asyncpg.Connection | PoolConnectionProxy, channel_state: ChannelState
+) -> None:
+    """Restore persisted entries and recent history for a newly configured channel."""
+    db_entry_guild_list = await conn.fetch('SELECT * FROM mvp_guild WHERE id_guild=$1', channel_state.id_guild)
+    db_entry_log_list = await conn.fetch(
+        'SELECT * FROM mvp_guild_log WHERE id_guild=$1 ORDER BY date DESC', channel_state.id_guild
+    )
+    entries_by_id = {entry.id: entry for entry in bot.mvp_list}
+    await _restore_channel_entries(
+        bot,
+        conn,
+        channel_state,
+        db_entry_guild_list,
+        db_entry_log_list,
+        entries_by_id,
+    )
+
+
+async def _restore_channel_entries(
+    bot: Bot,
+    conn: asyncpg.Connection | PoolConnectionProxy,
+    channel_state: ChannelState,
+    db_entry_guild_list,
+    db_entry_log_list,
+    entries_by_id: dict[int, Mvp],
+) -> None:
+    for db_entry_guild in db_entry_guild_list:
+        if db_entry_guild['id_guild'] != channel_state.id_guild:
+            continue
+        entry = entries_by_id.get(db_entry_guild['id_mvp'])
+        if entry is None:
             continue
         entry_state = track_util.track_entry(channel_state, entry, db_entry_guild['track_time'])
-        # track_entry reseta notified=False; restaura o valor persistido para
-        # não re-pingar uma janela que já foi avisada antes do restart.
+        # track_entry resets notified; restore the persisted value to avoid a
+        # duplicate ping when an already-open window survives a restart.
         entry_state.notified = db_entry_guild['notified']
-    await _load_db_entries_log(bot, conn)
 
-
-async def _load_db_entries_log(bot: Bot, conn: asyncpg.Connection) -> None:
-    sql = 'SELECT * FROM mvp_guild_log ORDER BY date DESC'
-    db_entry_log_list = await conn.fetch(sql)
     for db_entry_log in db_entry_log_list:
-        guild_state = bot.guild_states.get(db_entry_log['id_guild'])
-        if guild_state is None:
+        if db_entry_log['id_guild'] != channel_state.id_guild:
             continue
-        entry = next(
-            (x for x in bot.mvp_list if x.id == db_entry_log['id_mvp']),
-            None,
-        )
+        entry = entries_by_id.get(db_entry_log['id_mvp'])
         if entry is None:
-            continue
-        channel_state = guild_state.get_channel_state(TrackType.MVP)
-        if channel_state is None:
             continue
         if len(channel_state.entry_logs) < 3:
             channel_state.entry_logs.append(
                 EntryLog(entry=entry, date=db_entry_log['date'], id_user=db_entry_log['id_user'])
             )
         else:
-            entry_state = next(
-                (x for x in channel_state.entry_states if x.entry is entry),
-                None,
-            )
+            entry_state = next((x for x in channel_state.entry_states if x.entry is entry), None)
             if entry_state is not None and entry_state.r2 <= -bot.settings.table_entry_expiration_mins:
-                delete_sql = 'DELETE FROM mvp_guild WHERE id_guild=$1 AND id_mvp=$2'
                 await conn.execute(
-                    delete_sql,
+                    'DELETE FROM mvp_guild WHERE id_guild=$1 AND id_mvp=$2',
                     db_entry_log['id_guild'],
                     db_entry_log['id_mvp'],
                 )

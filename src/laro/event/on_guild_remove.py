@@ -16,6 +16,7 @@ async def on_guild_remove(guild: discord.Guild, bot: Bot) -> None:
     try:
         async with conn.transaction():
             await conn.execute('DELETE FROM mvp_guild WHERE id_guild=$1', guild.id)
+            await conn.execute('DELETE FROM mvp_guild_log WHERE id_guild=$1', guild.id)
             await conn.execute('DELETE FROM guild WHERE id=$1', guild.id)
         bot.guild_states.pop(guild.id, None)
     finally:

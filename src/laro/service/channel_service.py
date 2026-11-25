@@ -72,8 +72,8 @@ def validate_channel(bot: Bot, channel) -> str | None:
         missing.append('Manage Messages')
     if not permissions.read_message_history:
         missing.append('Read Message History')
-    if not permissions.add_reactions:
-        missing.append('Add Reactions')
+    if not permissions.embed_links:
+        missing.append('Embed Links')
     if len(missing) > 0:
         msg = 'Bot is missing the following permissions:\n\n'
         for idx in range(len(missing)):
@@ -335,16 +335,23 @@ async def set_channel(bot: Bot, channel: discord.TextChannel, type: TrackType) -
     guild_state = bot.guild_states[channel.guild.id]
     conn = await bot.pool_acquire()
     try:
-        sql = f'UPDATE guild SET id_{type.sql_desc}_channel=$1 WHERE id=$2'
-        await conn.execute(sql, channel.id, channel.guild.id)
-        channel_state = guild_state.remove_channel_state(type)
-        entry_states = channel_state.entry_states if channel_state is not None else []
+        previous_state = guild_state.get_channel_state(type)
         channel_state = ChannelState(
             id_channel=channel.id,
             id_guild=channel.guild.id,
             type=type,
-            entry_states=entry_states,
+            entry_states=previous_state.entry_states if previous_state is not None else [],
         )
+        if previous_state is not None:
+            channel_state.entry_logs = previous_state.entry_logs
+        async with conn.transaction():
+            sql = f'UPDATE guild SET id_{type.sql_desc}_channel=$1 WHERE id=$2'
+            await conn.execute(sql, channel.id, channel.guild.id)
+            if previous_state is None:
+                from laro.service import entry_service
+
+                await entry_service.load_channel_entries(bot, conn, channel_state)
+        guild_state.remove_channel_state(type)
         guild_state.channel_states[channel.id] = channel_state
     finally:
         await bot.pool_release(conn)
@@ -427,24 +434,23 @@ async def update_channel_message(bot: Bot, channel_state: ChannelState) -> None:
         else:
             inactive_entry_state_ids.append((entry_state.entry.id, channel_state.id_guild))
 
-    channel_state.entry_states = active_entry_states
-
     conn = await bot.pool_acquire()
     try:
         del_entry_state_sql = 'DELETE FROM mvp_guild WHERE id_mvp=$1 AND id_guild=$2'
         await conn.executemany(del_entry_state_sql, inactive_entry_state_ids)
     finally:
         await bot.pool_release(conn)
+    channel_state.entry_states = active_entry_states
 
     if len(names) == 0:
         embed.add_field(name=':x:', value='MVP list is empty', inline=False)
     else:
         if len(names) > TABLE_MAX_ROWS + 1:
             diff = len(names) - TABLE_MAX_ROWS
-            for _ in range(0, diff):
-                names.pop()
-                maps.pop()
-                remaining_times.pop()
+            names = names[:TABLE_MAX_ROWS]
+            if not mobile:
+                maps = maps[:TABLE_MAX_ROWS]
+                remaining_times = remaining_times[:TABLE_MAX_ROWS]
             names.append(f'and {diff} more...')
         if id_mob_first_entry is not None:
             embed.set_thumbnail(url='https://file5s.ratemyserver.net/mobs/' + str(id_mob_first_entry) + '.gif')
