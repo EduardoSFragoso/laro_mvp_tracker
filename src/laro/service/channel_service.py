@@ -333,25 +333,25 @@ def is_msg_can_be_deleted(bot: Bot, channel_state: ChannelState, msg: discord.Me
 
 async def set_channel(bot: Bot, channel: discord.TextChannel, type: TrackType) -> None:
     guild_state = bot.guild_states[channel.guild.id]
-    channel_state = guild_state.remove_channel_state(type)
-    entry_states = channel_state.entry_states if channel_state is not None else []
-    channel_state = ChannelState(
-        id_channel=channel.id,
-        id_guild=channel.guild.id,
-        type=type,
-        entry_states=entry_states,
-    )
-    guild_state.channel_states[channel.id] = channel_state
-    await init_channel(bot, channel_state)
-    if channel_state.id_message is None:
-        await send_help_message(bot, channel_state)
-    await update_channel_message(bot, channel_state)
     conn = await bot.pool_acquire()
     try:
         sql = f'UPDATE guild SET id_{type.sql_desc}_channel=$1 WHERE id=$2'
         await conn.execute(sql, channel.id, channel.guild.id)
+        channel_state = guild_state.remove_channel_state(type)
+        entry_states = channel_state.entry_states if channel_state is not None else []
+        channel_state = ChannelState(
+            id_channel=channel.id,
+            id_guild=channel.guild.id,
+            type=type,
+            entry_states=entry_states,
+        )
+        guild_state.channel_states[channel.id] = channel_state
     finally:
         await bot.pool_release(conn)
+    await init_channel(bot, channel_state)
+    if channel_state.id_message is None:
+        await send_help_message(bot, channel_state)
+    await update_channel_message(bot, channel_state)
 
 
 async def unset_channel(bot: Bot, channel: discord.TextChannel, trackType: TrackType) -> None:
@@ -364,11 +364,11 @@ async def unset_channel(bot: Bot, channel: discord.TextChannel, trackType: Track
     if channel_state is None:
         await run_coro(channel.send(f'There is no {trackType.desc} channel set.'))
         return
-    del guild_state.channel_states[channel_state.id_channel]
     conn = await bot.pool_acquire()
     try:
         sql = f'UPDATE guild SET id_{trackType.sql_desc}_channel=NULL WHERE id=$1'
         await conn.execute(sql, channel.guild.id)
+        del guild_state.channel_states[channel_state.id_channel]
     finally:
         await bot.pool_release(conn)
     await run_coro(channel.send(trackType.desc + ' channel unset.'))

@@ -13,10 +13,10 @@ async def custom_core(bot: Bot, message: discord.Message) -> None:
     if guild_state is None:
         return
     custom = not guild_state.custom
-    guild_state.custom = custom
     conn = await bot.pool_acquire()
     try:
         await conn.execute('UPDATE guild SET custom=$2 WHERE id=$1', message.guild.id, custom)
+        guild_state.custom = custom
     finally:
         await bot.pool_release(conn)
     msg = 'Custom MVP respawn times ' + ('enabled.' if custom else 'disabled.')

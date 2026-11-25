@@ -14,10 +14,10 @@ async def mobile_core(bot: Bot, message: discord.Message) -> None:
     if guild_state is None:
         return
     mobile = not guild_state.mobile
-    guild_state.mobile = mobile
     conn = await bot.pool_acquire()
     try:
         await conn.execute('UPDATE guild SET mobile=$2 WHERE id=$1', message.guild.id, mobile)
+        guild_state.mobile = mobile
     finally:
         await bot.pool_release(conn)
     msg = 'MVP list mobile layout ' + ('enabled.' if mobile else 'disabled.')
