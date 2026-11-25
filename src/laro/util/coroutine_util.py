@@ -14,5 +14,5 @@ async def run_coro(coroutine):
     """
     try:
         return await coroutine
-    except BaseException:
+    except Exception:
         log.error('Unexpected error.', exc_info=True)

@@ -60,9 +60,10 @@ services:
     autoheal:
         # Vigia containers com label 'autoheal' e reinicia os que o healthcheck
         # marcar como unhealthy (o Docker puro nao faz isso sozinho).
-        image: willfarrell/autoheal:latest
+        image: willfarrell/autoheal:1.1.0
         container_name: laro-autoheal
         restart: unless-stopped
+        network_mode: none
         environment:
             # Intervalo em que varre por containers unhealthy
             AUTOHEAL_INTERVAL: '60'

@@ -52,8 +52,8 @@ Depois adicione a mesma chave pública em **Settings → SSH and GPG keys** como
 | Item | Estado atual | Onde |
 |---|---|---|
 | Dependabot alerts + security updates | ✅ enabled | Settings → Code security |
-| Code scanning (CodeQL) | desligado | opcional; cobre Python |
-| Private vulnerability reporting / `SECURITY.md` | não configurado | opcional; repo público |
+| Code scanning (CodeQL) | confirmar no GitHub | `docs/auditoria-infra.md` diz que está ativo; este checklist registrava desligado | alinhar após conferir Security → Code scanning |
+| Private vulnerability reporting | confirmar no GitHub | `SECURITY.md` e `docs/auditoria-infra.md` dizem que está ativo; este checklist registrava não configurado | alinhar após conferir Security → Private vulnerability reporting |
 | Workflow permissions | `contents: read` declarado no workflow | manter; cada workflow declara o que precisa |
 | PRs por workflows (GITHUB_TOKEN) | n/a | autorizar manualmente se um dia um workflow abrir PR |
 
@@ -63,10 +63,10 @@ Depois adicione a mesma chave pública em **Settings → SSH and GPG keys** como
 
 | Arquivo | Estado |
 |---|---|
-| `.github/dependabot.yml` | ✅ pip (`/src`) + github-actions + docker, semanal — o exemplo deste arquivo é a própria config real do repo |
+| `.github/dependabot.yml` | ✅ pip (`/` e `/src`) + github-actions + docker, semanal — o exemplo deste arquivo é a própria config real do repo |
 | `.github/pull_request_template.md` | ✅ existe: "O que mudou e por quê / Como foi testado / Riscos e como reverter" |
 | `.gitignore` | ✅ cobre `.env`, `.env.*`, `*.pem`, `*.key`, `.venv/`, `__pycache__/` |
-| `SECURITY.md` | pendência opcional: canal para reporte de vulnerabilidades |
+| `SECURITY.md` | ✅ orienta reporte privado; o estado da configuração deve ser confirmado no GitHub |
 | `CODEOWNERS` | não aplicável (revisor único) |
 
 ## 5. Como mostrar a configuração a uma IA, sem prints

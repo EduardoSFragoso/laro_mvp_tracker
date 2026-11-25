@@ -1,0 +1,2 @@
+# Utilitário da validação estática do schema e do seed SQL.
+sqlglot==30.33.0

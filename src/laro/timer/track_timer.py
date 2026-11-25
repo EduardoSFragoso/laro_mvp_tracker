@@ -26,6 +26,10 @@ class TrackTimer:
                     for entry_state in channel_state.entry_states:
                         track_util.calc_remaining_time(entry_state, entry_state.track_time)
                         if not entry_state.notified and 0 >= int(entry_state.r1) >= -1 and int(entry_state.r2) >= 0:
+                            entry_state.notification_pending = True
+                        if int(entry_state.r2) < 0:
+                            entry_state.notification_pending = False
+                        if entry_state.notification_pending and int(entry_state.r2) >= 0:
                             fresh_open.append(entry_state)
                     await channel_service.update_channel_message(bot, channel_state)
                 # Janelas abertas (r1 <= 0 <= r2): mantêm/atualizam o aviso vivo
@@ -35,9 +39,7 @@ class TrackTimer:
                     for entry_state in channel_state.entry_states
                     if int(entry_state.r1) <= 0 <= int(entry_state.r2)
                 ]
-                await channel_service.update_notification(
-                    bot, channel_state, open_entries, new_windows=bool(fresh_open)
-                )
+                await channel_service.update_notification(bot, channel_state, open_entries, new_entries=fresh_open)
                 channel = channel_service.get_channel_from_guild(guild, channel_state.id_channel)
                 if channel is None:
                     continue

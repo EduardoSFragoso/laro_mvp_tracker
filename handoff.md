@@ -31,7 +31,8 @@ pyrightconfig.json          # basic mode, venvPath .venv, src+tests
 ## Comandos de dev (PC)
 
 ```bash
-.venv/Scripts/python.exe -m pytest -q        # 54 testes
+pip install -r src/requirements.lock -r requirements-dev.txt pytest ruff pyright
+.venv/Scripts/python.exe -m pytest -q        # 58 testes
 .venv/Scripts/ruff.exe check .
 .venv/Scripts/ruff.exe format --check .
 .venv/Scripts/python.exe -m pyright          # 0 errors (basic)
@@ -40,7 +41,7 @@ pyrightconfig.json          # basic mode, venvPath .venv, src+tests
 ## Deploy na VM (via MobaXterm; agente sugere, aqui executa)
 
 ```bash
-cd ~/laro_mvp_tracker && git pull && docker compose up -d --build
+cd ~/laro_mvp_tracker && git pull && docker compose pull autoheal && docker compose up -d --build bot autoheal
 ```
 
 Banco: `docker compose exec db psql -U postgres -d laro` (porta NÃO publicada fora do compose).
@@ -58,11 +59,14 @@ Banco: `docker compose exec db psql -U postgres -d laro` (porta NÃO publicada f
 - Heartbeat: `monitoring_service.run_heartbeat` pinga `HEARTBEAT_URL` a cada `HEARTBEAT_SECS` (60s). Monitor: healthchecks.io (period/grace 10 min) → e-mail `duds.fragoso@gmail.com`.
 - Aviso de janela de respawn: **mensagem viva** (`ChannelState.notification_message`, título `:bell: Janelas de respawn abertas`) — fica no canal enquanto houver janela aberta (`r1 <= 0 <= r2`) e é deletada quando a última fecha. Exceção na limpeza (`is_msg_can_be_deleted`); no restart, `init_channel` re-adopta o aviso existente e apaga duplicados. Ping só em **janela nova**, na role `guild.id_notification_role` (`!setpingrole`/`!unsetpingrole`); **nunca** `@here`/`@everyone` (`AllowedMentions.none()` ou `roles=[role]`).
 - Flag de aviso persistida: coluna `mvp_guild.notified` (NOT NULL, default FALSE) — gravada `TRUE` quando o aviso sai, `FALSE` ao re-rastrear (`update_track_time`) e restaurada em `load_db_entries` (restart não re-pinga janela já avisada).
-- Gate de admin: `ADMIN_COMMANDS` em `event/on_message.py` (`!timezone`, `!unsettimezone`, `!setmvpchannel`, `!unsetmvpchannel`, `!setpingrole`, `!unsetpingrole`, `!clean`) exigem a permissão **Gerenciar Servidor** do usuário. `!track`, `!woe` e `!settings` (leitura) ficaram abertos.
+- Gate de admin: `ADMIN_COMMANDS` em `event/on_message.py` (`!timezone`, `!unsettimezone`, `!setmvpchannel`, `!unsetmvpchannel`, `!setpingrole`, `!unsetpingrole`, `!clean`, `!mobile`) exigem a permissão **Gerenciar Servidor** do usuário. `!track`, `!woe` e `!settings` (leitura) ficaram abertos.
 - Botões de confirmação de `!clean` e `!setmvpchannel`: só o administrador que iniciou a ação pode confirmar ou cancelar, e ele precisa manter **Gerenciar Servidor** até interagir.
 - Menções são desativadas por padrão no cliente Discord (`AllowedMentions.none()`); o ping explícito da role de notificação continua permitido quando configurado.
 - Docker instala `src/requirements.lock`; ao atualizar dependências, manter o lockfile coerente com `src/requirements.txt`. `.dockerignore` exclui `.env`, arquivos de chave privada e diretórios locais de desenvolvimento.
 - Painel do canal de tracking: embed amarela única com `title` 👑 MVPs + `thumbnail`; `!mobile` alterna entre 3 colunas e layout 1 coluna. Discord **não** permite `#` headers nem fonte custom em embed (testado em 2026-11; preview de 2 embeds foi rejeitado pelo dono — manter formato atual).
+- `on_ready` reutiliza `bot.pool` após reconexões do gateway; não criar pool substituto sem fechar o atual. `tracker_ready` volta a `False` enquanto a conexão é revalidada.
+- O bot roda como usuário sem privilégios no container. O `autoheal` usa versão fixada e não precisa de rede; no deploy, atualizar essa imagem e recriar `bot` e `autoheal` conforme o comando acima.
+- Notificação só marca `notified` depois que o envio/edição no Discord funciona. `notification_pending` vive apenas em memória e permite nova tentativa enquanto a janela continua aberta.
 - `bot.guild_states: dict[int, GuildState]` — ao remover servidor, `pop(id, None)`; nunca armazenar `None` (quebra `on_ready`).
 - Comandos via DM são ignorados (`message.guild is None` → return).
 - `.env` nunca lido/commitado pelo agente (AGENTS.md). `.env.example` é o contrato de nomes.

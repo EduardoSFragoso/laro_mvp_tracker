@@ -27,14 +27,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: src/requirements.lock
-      - name: Instalar dependências (lockfile) + ferramentas de dev
-        run: pip install -r src/requirements.lock pytest ruff
+      - name: Instalar dependências (lockfiles) + ferramentas de dev
+        run: pip install -r src/requirements.lock -r requirements-dev.txt pytest ruff
       - name: Ruff check
         run: ruff check .
       - name: Ruff format
         run: ruff format --check .
       - name: Testes
         run: pytest -q
+      - name: Validar schema e seed SQL
+        run: python scripts/validate_sql.py
 
   types:
     # Escrever types nao varia por versao do Python: um unico job basta.
@@ -68,3 +70,4 @@ jobs:
         run: |
           pip install pip-audit
           pip-audit -r src/requirements.lock --strict
+          pip-audit -r requirements-dev.txt --strict

@@ -90,7 +90,7 @@ And in the **Bot** tab of the portal, enable the **Message Content Intents** *pr
 
 On each track channel, the bot validates these permissions at runtime and posts a breakdown when any are missing (`validate_channel`).
 
-Setup commands (`!timezone`, `!setmvpchannel`/`!unsetmvpchannel`, `!setpingrole`/`!unsetpingrole`, `!clean`) require the **Manage Server** permission (of the *user* typing the command).
+Setup commands (`!timezone`, `!setmvpchannel`/`!unsetmvpchannel`, `!setpingrole`/`!unsetpingrole`, `!clean`, `!mobile`) require the **Manage Server** permission (of the *user* typing the command).
 
 Commands are **prefix-based messages** (default `!`, configurable in `COMMAND_PREFIX`) — instead of slash commands — so they do not mix with the slash commands of other bots on the `/` list. The table shows the **kRO map code** (navi, e.g. `gon_dun03`) instead of the Portuguese map name. Only messages starting with the prefix are processed; anything else is deleted automatically by the channel cleaning routine (requires the **Manage Messages** permission).
 
@@ -110,12 +110,13 @@ Command | Description
 **!unsetmvpchannel** | Undo the MVP track channel definition.
 **!timezone** | Set a custom timezone for tracking when the time is given in `HHMM` syntax.
 **!unsettimezone** | Remove the custom timezone.
+**!mobile** | Toggle between the regular and mobile list layouts.
 **!settings** | Show the current bot settings.
 **!clean** | Remove all tracked MVPs from the table (useful after a server reboot).
 **!woe** | Show the War of Emperium (WoE) schedule: every Sunday, 8 PM to 10 PM server time (UTC-3).
 **!** (or **!help**) | Show the command list.
 
-> **Note:** the `/track` etc. commands no longer exist as **slash commands**; the original project's `custom`, `mobile`, `/gmc` and `/hh` features remain disabled/stripped on LATAM — custom and mobile have no use on this server, and GMC and Happy Hour do not exist on LATAM.
+> **Note:** `/track` and the other slash commands were removed. `!mobile` remains available as a prefix command; `!custom`, `/gmc` and `/hh` are not available on LATAM.
 
 ## MVP list (LATAM)
 
@@ -191,9 +192,9 @@ Vigia do Tempo | Time Holder | Torre Distorcida (3) | 120~130 min
 ## Tests and validation
 
 ```bash
-pip install -r requirements.txt pytest
+pip install -r src/requirements.lock -r requirements-dev.txt pytest
 pytest
-python scripts/validate_sql.py  # validates the SQL syntax and seed counts (requires sqlglot)
+python scripts/validate_sql.py  # validates SQL syntax and seed counts
 ```
 
 ## Fly.io deploy

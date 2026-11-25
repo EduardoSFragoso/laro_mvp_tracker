@@ -90,7 +90,7 @@ E no portal, aba **Bot**, ative a *privileged intent* **Message Content Intents*
 
 Em cada canal de track, o bot valida essas permissões no ambiente e avisa na tela com um detalhamento quando faltam (`validate_channel`).
 
-Comandos de configuração (`!timezone`, `!setmvpchannel`/`!unsetmvpchannel`, `!setpingrole`/`!unsetpingrole`, `!clean`) exigem a permissão **Gerenciar Servidor** (do *usuário* que digita o comando).
+Comandos de configuração (`!timezone`, `!setmvpchannel`/`!unsetmvpchannel`, `!setpingrole`/`!unsetpingrole`, `!clean`, `!mobile`) exigem a permissão **Gerenciar Servidor** (do *usuário* que digita o comando).
 
 Os comandos são **mensagens com prefixo** (padrão `!`, configurável em `COMMAND_PREFIX`) — em vez de slash commands — para não aparecer misturados aos comandos de outros bots na lista `/`. A tabela exibe o **código kRO do mapa** (navi, ex.: `gon_dun03`) em vez do nome em português. Só mensagens que começam com o prefixo são processadas; as demais são apagadas automaticamente pela rotina de limpeza do canal (requer permissão **Manage Messages**).
 
@@ -110,12 +110,13 @@ Comando | Descrição
 **!unsetmvpchannel** | Cancela o canal de rastreio de MVPs.
 **!timezone** | Define uma timezone customizada para o rastreio quando o horário é informado via `HHMM`.
 **!unsettimezone** | Remove a timezone customizada.
+**!mobile** | Alterna a lista entre layout normal e mobile.
 **!settings** | Mostra as configurações atuais do bot.
 **!clean** | Remove todos os MVPs rastreados da tabela (útil após reinícios do servidor).
 **!woe** | Mostra o horário da Guerra do Emperium (WoE): todo domingo, das 20h às 22h (horário do servidor, UTC-3).
 **!** (ou **!help**) | Mostra a lista de comandos.
 
-> **Nota:** os comandos `/track` etc. deixaram de existir como **slash commands**; `custom`, `mobile`, `/gmc` e `/hh` do projeto original seguem desativados/sem código no LATAM — custom e mobile não têm uso no servidor, e GMC e Happy Hour não existem no LATAM.
+> **Nota:** os comandos `/track` etc. deixaram de existir como **slash commands**. `!mobile` continua ativo como comando por prefixo; `!custom`, `/gmc` e `/hh` não estão disponíveis no LATAM.
 
 ## Lista de MVPs (LATAM)
 
@@ -191,9 +192,9 @@ Vigia do Tempo | Time Holder | Torre Distorcida (3) | 120~130 min
 ## Testes e validação
 
 ```bash
-pip install -r requirements.txt pytest
+pip install -r src/requirements.lock -r requirements-dev.txt pytest
 pytest
-python scripts/validate_sql.py  # valida sintaxe e contagens do SQL (requer sqlglot)
+python scripts/validate_sql.py  # valida sintaxe e contagens do SQL
 ```
 
 ## Deploy no Fly.io
