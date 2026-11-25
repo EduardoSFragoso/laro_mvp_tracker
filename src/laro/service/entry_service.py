@@ -16,13 +16,10 @@ def find_entry(bot: Bot, query: str) -> list[Mvp]:
     An exact match short-circuits the search. Otherwise every entry whose
     full name (name + map) or alias starts with the query is returned.
     """
-    results = []
-    for entry in bot.mvp_list:
-        if _entry_matches(entry, query):
-            results.append(entry)
-            if _entry_exact_match(entry, query):
-                return [entry]
-    return results
+    exact_matches = [entry for entry in bot.mvp_list if _entry_exact_match(entry, query)]
+    if exact_matches:
+        return exact_matches
+    return [entry for entry in bot.mvp_list if _entry_matches(entry, query)]
 
 
 def _entry_compare(entry: Mvp) -> list[str]:

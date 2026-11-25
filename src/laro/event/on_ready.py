@@ -17,13 +17,15 @@ log = logging.getLogger(__name__)
 
 async def on_ready(bot: Bot) -> None:
     log.info(f'Connected as {bot.user} on {len(bot.guilds)} servers.')
+    bot.tracker_ready = False
 
-    try:
-        log.info('Create database pool.')
-        bot.pool = await asyncpg.create_pool(dsn=bot.settings.database_url)
-    except (asyncpg.PostgresError, OSError) as e:
-        log.error(f'Error on database pool creation: {e}')
-        os._exit(42)
+    if bot.pool is None:
+        try:
+            log.info('Create database pool.')
+            bot.pool = await asyncpg.create_pool(dsn=bot.settings.database_url)
+        except (asyncpg.PostgresError, OSError) as e:
+            log.error(f'Error on database pool creation: {e}')
+            os._exit(42)
 
     conn = await bot.pool_acquire()
     try:

@@ -56,6 +56,18 @@ def test_alias_exact_match_short_circuits():
     assert find_entry(bot, 'baphomet') == [MVP_LIST[2]]
 
 
+def test_exact_duplicate_name_returns_all_candidates():
+    bot = make_bot(
+        [
+            Mvp(id=1, name='Senhor das Trevas', map='Glastheim', t1=60, t2=70, alias=['Dark Lord']),
+            Mvp(id=2, name='Senhor das Trevas', map='Cemitério Amaldiçoado', t1=60, t2=70, alias=['Dark Lord']),
+        ]
+    )
+
+    assert find_entry(bot, 'Senhor das Trevas') == bot.mvp_list
+    assert find_entry(bot, 'Dark Lord') == bot.mvp_list
+
+
 def test_alias_prefix_match():
     bot = make_bot(MVP_LIST)
     results = find_entry(bot, 'nightmare')

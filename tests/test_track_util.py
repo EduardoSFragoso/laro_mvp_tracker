@@ -112,3 +112,4 @@ def test_track_entry_resets_notified_flag():
     entry_state.notified = True
     track_util.track_entry(channel_state, mvp, now + timedelta(minutes=30))
     assert entry_state.notified is False
+    assert entry_state.notification_pending is False

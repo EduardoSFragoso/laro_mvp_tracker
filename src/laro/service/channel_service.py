@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 import discord
 
 from laro.domain.bot import Bot
-from laro.domain.models import ChannelState, EntryLog, GuildState
+from laro.domain.models import ChannelState, EntryLog, GuildState, TrackEntryState
 from laro.domain.track_type import TrackType
 from laro.service import entry_service
 from laro.util import track_util
@@ -285,7 +285,9 @@ def _fmt_track_reply(entry_state, user_time: str | None) -> str:
 # --------------------------------------------------------------------------
 
 
-async def update_notification(bot: Bot, channel_state: ChannelState, open_entries: list, new_windows: bool) -> None:
+async def update_notification(
+    bot: Bot, channel_state: ChannelState, open_entries: list, new_entries: list[TrackEntryState]
+) -> None:
     """Keep a live notification message for MVPs whose respawn window is open.
 
     With no open window there is no message; when windows are open the message
@@ -300,21 +302,7 @@ async def update_notification(bot: Bot, channel_state: ChannelState, open_entrie
         if channel_state.notification_message is not None:
             await _delete_notification(channel_state)
         return
-    # Newly opened windows (re)start notifications and ping the role.
-    if new_windows:
-        for entry_state in open_entries:
-            entry_state.notified = True
-        # Persiste a flag para sobreviver a restarts (não re-pinga).
-        conn = await bot.pool_acquire()
-        try:
-            sql = (
-                f'UPDATE {channel_state.type.sql_desc}_guild '
-                f'SET notified=TRUE WHERE id_{channel_state.type.sql_desc}=$1 AND id_guild=$2'
-            )
-            for entry_state in open_entries:
-                await conn.execute(sql, entry_state.entry.id, channel_state.id_guild)
-        finally:
-            await bot.pool_release(conn)
+    new_windows = bool(new_entries)
     guild_state = bot.get_guild_state(channel_state.id_guild)
     if guild_state is None:
         return
@@ -331,13 +319,31 @@ async def update_notification(bot: Bot, channel_state: ChannelState, open_entrie
             content = role.mention
             allowed_mentions = discord.AllowedMentions(roles=[role])
         try:
-            sent = await run_coro(channel.send(content, embed=embed, allowed_mentions=allowed_mentions))
+            sent = await channel.send(content, embed=embed, allowed_mentions=allowed_mentions)
         except discord.DiscordException:
             log.error('Error sending notification message.', exc_info=True)
             return
         channel_state.notification_message = sent
     else:
-        await _edit_notification(bot, channel_state, msg, embed, guild_state, role_ping=new_windows)
+        if not await _edit_notification(bot, channel_state, msg, embed, guild_state, role_ping=new_windows):
+            return
+
+    if new_entries:
+        for entry_state in new_entries:
+            entry_state.notified = True
+            entry_state.notification_pending = False
+        # Persiste após o envio/edição bem-sucedido, para não perder um aviso
+        # quando o Discord rejeitar temporariamente a mensagem.
+        conn = await bot.pool_acquire()
+        try:
+            sql = (
+                f'UPDATE {channel_state.type.sql_desc}_guild '
+                f'SET notified=TRUE WHERE id_{channel_state.type.sql_desc}=$1 AND id_guild=$2'
+            )
+            for entry_state in new_entries:
+                await conn.execute(sql, entry_state.entry.id, channel_state.id_guild)
+        finally:
+            await bot.pool_release(conn)
 
 
 def _notification_embed(timezone: str, open_entries: list) -> discord.Embed:
@@ -353,11 +359,11 @@ def _notification_embed(timezone: str, open_entries: list) -> discord.Embed:
 
 async def _edit_notification(
     bot: Bot, channel_state: ChannelState, msg: discord.Message, embed: discord.Embed, guild_state, role_ping: bool
-) -> None:
+) -> bool:
     # Skip the edit when nothing changed (the timer runs every minute).
     old_description = msg.embeds[0].description if len(msg.embeds) > 0 else None
     if old_description == embed.description and not role_ping:
-        return
+        return True
     # A new window opening (role_ping) mentions the role again on the edit.
     content = None
     allowed_mentions = discord.AllowedMentions.none()
@@ -368,10 +374,12 @@ async def _edit_notification(
             content = role.mention
             allowed_mentions = discord.AllowedMentions(roles=[role])
     try:
-        await run_coro(msg.edit(content=content, embed=embed, allowed_mentions=allowed_mentions))
+        await msg.edit(content=content, embed=embed, allowed_mentions=allowed_mentions)
+        return True
     except discord.DiscordException:
         # Message deleted by someone: drop the reference; the next tick sends a new one.
         channel_state.notification_message = None
+        return False
 
 
 async def _delete_notification(channel_state: ChannelState) -> None:

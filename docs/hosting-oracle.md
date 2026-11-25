@@ -91,7 +91,8 @@ rede fora, docker travado, bot crashado), o monitor dispara o alarme.
 ```bash
 cd laro_mvp_tracker
 git pull
-docker compose up -d --build
+docker compose pull autoheal
+docker compose up -d --build bot autoheal
 docker compose logs --no-color --since 10m bot   # procurar Traceback
 ```
 

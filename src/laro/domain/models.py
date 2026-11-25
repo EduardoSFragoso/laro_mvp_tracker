@@ -50,6 +50,7 @@ class TrackEntryState:
     r1: int = -999
     r2: int = -999
     notified: bool = False  # window-open notification already sent
+    notification_pending: bool = False  # notification failed during the current process
 
 
 @dataclass
