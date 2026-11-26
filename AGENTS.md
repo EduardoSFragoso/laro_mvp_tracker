@@ -57,7 +57,7 @@
 - Em projetos Python, use as ferramentas já configuradas no repositório; opções possíveis incluem Ruff, Black, mypy ou Pyright.
 - Em projetos JavaScript/TypeScript, siga a configuração existente, por exemplo ESLint e Prettier.
 - Não introduza uma ferramenta nova sem necessidade; respeite primeiro as dependências e convenções existentes.
-- Em projetos Java com Spring Boot e Maven, use sempre o wrapper (`./mvnw`) e as ferramentas configuradas no repositório, por exemplo Spotless ou google-java-format, Checkstyle, SpotBugs ou Error Prone, e JUnit 5. Rode `./mvnw verify` antes de dar uma tarefa por concluída.
+- Este projeto usa Python, Ruff, Pyright e pytest; não aplicar instruções de ferramentas ou frameworks de outras stacks.
 - Exceção ao item sobre ferramentas novas: elas são aceitáveis quando criam uma rede de segurança ou fecham um risco real; registre o motivo no `handoff.md`.
 - Na CI, declare `permissions` mínimas (por exemplo `contents: read`), mantenha o Dependabot (ou equivalente) ativo e atualize as GitHub Actions.
 
@@ -97,18 +97,13 @@
 - Inclua verificações de segurança no fluxo de revisão e teste, usando ferramentas automáticas e avaliação especializada quando apropriado.
 - Nunca leia, exiba nem faça commit de `.env` ou de arquivos de credenciais; mascare valores secretos em logs, saídas e mensagens. Peça um `.env.example` com os nomes das variáveis, nunca os valores.
 - Em repositório novo, varra o código **e o histórico do Git** em busca de segredos. Se achar algum, pare e avise: o passo é **rotacionar** a credencial. Apagá-la do código não basta, porque o histórico guarda o valor.
-- Em repositório público, todo o histórico é público. No frontend só podem existir chaves feitas para serem públicas.
-- Configure CORS apenas com as origens necessárias (nunca `*` com credenciais) e faça o frontend chamar a API somente por HTTPS.
-- Em projetos Spring Boot, use parâmetros nomeados (JPA, JdbcTemplate) ou `PreparedStatement` em vez de concatenar SQL, e mantenha credenciais fora de `application*.properties` e `.yml` versionados: use placeholders (`${VARIAVEL}`) preenchidos por variáveis de ambiente.
-- No Actuator, exponha em produção só o endpoint `health`, nunca `management.endpoints.web.exposure.include=*`. Revise a `SecurityFilterChain` (rotas com `permitAll`, CSRF e CORS) sempre que uma rota nova for criada.
+- Em repositório público, todo o histórico é público; nunca versionar credenciais.
 
-## Projetos com frontend no GitHub Pages, backend em VM e banco no Neon
+## Infraestrutura deste projeto
 
-- Confirme o que o Pages publica: apenas a pasta do frontend. Nada do backend, `.env`, dumps ou código do servidor pode ficar acessível por URL.
-- O frontend chama a API somente por HTTPS, e o CORS aceita só a origem do Pages.
-- O banco só é acessado pelo servidor: `DATABASE_URL` fora do frontend e do repositório, com `sslmode=require`. A aplicação usa uma role com privilégios mínimos, nunca a dona do banco.
-- Migrações são versionadas, testadas do zero na CI com um Postgres efêmero e aplicadas primeiro numa branch do Neon, nunca direto na produção. Não mude o esquema sem plano de reversão e sem confirmar que existe backup ou ponto de restauração.
-- Na VM e no banco real, o agente só **sugere comandos de leitura**; a pessoa executa e devolve a saída com segredos e hosts mascarados. Nada destrutivo (DROP, TRUNCATE, apagar volumes, mudar firewall, reiniciar serviços) sem confirmação explícita.
+- Este projeto é um bot Discord em Docker Compose, com PostgreSQL no mesmo host Oracle. Não há frontend, GitHub Pages, Neon, Spring Boot ou Actuator neste repositório.
+- Na VM e no banco de produção, sugira comandos de leitura para a pessoa executar; nunca peça nem aceite segredos reais. Não faça alterações destrutivas ou operacionais sem autorização explícita.
+- Antes de sugerir qualquer mudança de firewall/Security List, confirme quais VMs e projetos usam a regra compartilhada. A Security List padrão atual é compartilhada por duas VMs; a porta 443 é necessária para outro projeto. Não recomendar fechá-la como se a regra afetasse só o Laro.
 - Checklist e comandos de leitura: `docs/auditoria-infra.md`.
 
 ## Uso de assistentes de IA

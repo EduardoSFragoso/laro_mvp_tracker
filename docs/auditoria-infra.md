@@ -41,7 +41,7 @@ git log --all --diff-filter=A --name-only --format= | grep -Ei '\.env|\.pem|\.ke
 ## 2. Banco (Postgres no compose, volume local)
 
 - O Postgres **não publica porta**: só a rede interna do compose (`docker-compose.yml`, comentário no serviço `db`). Acesso do host via `docker compose exec db psql -U postgres -d laro`.
-- `DATABASE_URL` só no `.env` da VM — nunca no repo, nunca no frontend (não existe frontend).
+- `DATABASE_URL` fica no `.env` fora do Git em cada ambiente que executa o bot; nunca no repo. Não existe frontend neste projeto.
 - O projeto é single-tenant e usa a role dona do banco (`POSTGRES_USER`). Aceito por simplicidade; revisitar se um dia expor API.
 - **Backup automático diário** (implementado em 2026-11-23, validado também manualmente):
   - Script na VM: `~/backup_laro.sh` — `pg_dump` (usuário/banco lidos do env do container, nada sensível no script) → `gzip` → cópia datada em `~/backup_laro/` → upload pro OCI → rotação local (apaga cópias com mais de 7 dias).
@@ -78,14 +78,14 @@ Comandos de **leitura** para o dono executar na VM (mascare IPs antes de devolve
 ```bash
 ss -tlnp
 docker compose -f ~/laro_mvp_tracker/docker-compose.yml ps
-sudo ufw status verbose
 sudo sshd -T | grep -Ei 'passwordauthentication|permitrootlogin|pubkeyauthentication'
 stat -c '%a %U:%G %n' ~/laro_mvp_tracker/.env
 ```
 
-O último mostra só a permissão do `.env` (o esperado é `600`), sem ler o conteúdo.
+O comando `stat` mostra só a permissão do `.env` (o esperado é `600`), sem ler o conteúdo.
+Esta VM não tem UFW instalado; o ingresso de rede é controlado pela Security List da OCI.
 
-No console da Oracle, confira a **Security List**: a única porta pública deve ser **22 (SSH)**. O bot não expõe porta alguma — o `/health` escuta apenas dentro do container (checado pelo docker healthcheck, `127.0.0.1` no container, não publicadão).
+No console da Oracle, confira a **Security List** e todas as VMs associadas antes de propor mudanças. Ela é compartilhada por duas VMs neste ambiente; a regra **443/TCP** é usada por outro projeto e precisa permanecer. O bot Laro não exige entrada em 443: o `/health` fica interno ao container e não é publicado no host.
 
 Boas práticas:
 
@@ -109,8 +109,8 @@ Boas práticas:
 | Perda do volume do banco | backup diário 04:00 UTC no OCI `laro-db-backups` (detalhes na seção 2); check `backup-laro` no healthchecks.io fica vermelho se não rodar | volume avariado sem cópia fora da VM |
 
 - **Dependências:** `pip-audit -r src/requirements.lock --strict` roda no job `audit` da CI; Dependabot (pip, actions, docker) abre PRs semanais.
-- **Análise de código:** CodeQL pelo setup padrão do GitHub (Security → Code scanning; Python + Actions workflows, on push + semanal) — fora do `ci.yml`, gerenciado pelo GitHub. Alerts aparecem em Security → Code scanning; aliatar não é aceitar: triar antes.
-- **Reports de vulnerabilidade:** `SECURITY.md` aponta para o private vulnerability reporting (ligado nas configurações do repo, canal privado na aba Security) — nenhum e-mail exposto.
+- **Análise de código:** confirme em Settings/Security → Code scanning se CodeQL está realmente ativo; não há workflow CodeQL versionado neste repositório. Trate os alerts encontrados como itens a triar.
+- **Reports de vulnerabilidade:** `SECURITY.md` descreve o reporte privado; confirme nas configurações se o private vulnerability reporting está ativo antes de contar com esse canal.
 - **Imagem base:** `python:3.15.2-alpine` — atualizações via Dependabot (ecosystem docker).
 
 ## 5. Segurança do bot

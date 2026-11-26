@@ -52,8 +52,8 @@ Depois adicione a mesma chave pública em **Settings → SSH and GPG keys** como
 | Item | Estado atual | Onde |
 |---|---|---|
 | Dependabot alerts + security updates | ✅ enabled | Settings → Code security |
-| Code scanning (CodeQL) | confirmar no GitHub | `docs/auditoria-infra.md` diz que está ativo; este checklist registrava desligado | alinhar após conferir Security → Code scanning |
-| Private vulnerability reporting | confirmar no GitHub | `SECURITY.md` e `docs/auditoria-infra.md` dizem que está ativo; este checklist registrava não configurado | alinhar após conferir Security → Private vulnerability reporting |
+| Code scanning (CodeQL) | não confirmado | não há workflow CodeQL versionado; verificar Security → Code scanning | só documentar como ativo após conferir |
+| Private vulnerability reporting | não confirmado | `SECURITY.md` descreve reporte privado, mas o recurso pode depender da configuração do GitHub | confirmar em Security → Private vulnerability reporting |
 | Workflow permissions | `contents: read` declarado no workflow | manter; cada workflow declara o que precisa |
 | PRs por workflows (GITHUB_TOKEN) | n/a | autorizar manualmente se um dia um workflow abrir PR |
 

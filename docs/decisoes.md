@@ -43,7 +43,7 @@ serviços/utils/eventos/READMEs. O seed (`sql/seed_mvp_latam.sql`) inclui uma mi
 
 ## Padrões de desenvolvimento (AGENTS.md)
 
-Um documento de padrões (`AGENTS.md`, não versionado no repo) guiou o último commit (`93e9baa`):
+O documento de padrões `AGENTS.md` guiou o trabalho de manutenção. Na época do commit `93e9baa`, ele ainda não era versionado; hoje faz parte do repositório:
 
 - **Ruff** como linter + formatter (`pyproject.toml`): line-length 120, alvo py313, regras `E/W/F/I/B/UP/C4/SIM`, aspas simples
 - **Exceções específicas**: `domain/exceptions.py` (`BotConfigurationError`, `PoolNotInitializedError`) no lugar de `Exception` genérica; handlers estreitados (`discord.DiscordException`, `asyncpg.PostgresError`)
@@ -76,7 +76,7 @@ Os comandos do bot deixaram de ser slash commands e passaram a ser **mensagens c
 - A interpretação acontece no `on_message` (`_dispatch_cmd`): `!track|woe|settings|clean|timezone|unsettimezone|setmvpchannel|unsetmvpchannel|mobile` + `!`/`!help`; desconhecidos respondem com dica; mensagens sem o prefixo são ignoradas (e apagadas pela rotina de limpeza)
 - Os módulos em `command/` foram convertidos em funções `*_core(bot, message, ...)` reutilizáveis; `mobile` está ativo e exige permissão de administrador; `custom` continua desligado
 - O botão **➕ TRACK MVP** e o modal continuam como interface alternativa (o modal não suporta autocomplete na API do Discord — feature request aberta, discussion #6212 do discord-api; select menu em modal limita a 25 opções < 64 MVPs)
-- **Mensagem fixa de instruções**: canal de track agora tem, antes da tabela, um embed "📖 Como usar" persistente (`ChannelState.id_help_message`), recriado/reordenado automaticamente pelo `init_channel` e protegido da rotina de limpeza
+- **Mensagem persistente de instruções**: canal de track tem, antes da tabela, um embed "📖 Como usar" (`ChannelState.id_help_message`), recriado/reordenado automaticamente pelo `init_channel` e protegido da rotina de limpeza; não é um pin do Discord
 - Trade-off aceito: sair do slash remove o autocomplete do client; a ambiguidade de nomes continua resolvida pelo select (TrackView)
 
 ## Notificação de janela de respawn

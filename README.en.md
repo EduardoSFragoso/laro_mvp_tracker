@@ -67,7 +67,7 @@ psql "$DATABASE_URL" -f sql/seed_mvp_latam.sql
 
 Define a channel in your Discord server to be used exclusively for MVP tracking (a brand-new channel is strongly recommended). Use the **!setmvpchannel** command. In this channel the bot keeps a help message and a table with the tracked MVPs and their remaining respawn times.
 
-  - **WARNING**: after you use this command, **ALL** messages from the channel (if any) are erased irreversibly! Make sure you pick the right channel.
+  - **WARNING**: after confirmation, the bot deletes recent messages from the channel. Messages that are 14 days old or older are preserved due to a Discord limit. Make sure you pick the right channel.
 
 Inside an MVP channel, there are two ways to track a MVP:
 - typing **!track MVP_NAME** (no time = died now) or **!track MVP_NAME HHMM** (requires the **Message Content** intent; accepts the Portuguese name or the English alias — e.g. `!track amon ra 1234`, `!track atroce`, `!track brinaranea 1512`);
@@ -94,7 +94,7 @@ Setup commands (`!timezone`, `!setmvpchannel`/`!unsetmvpchannel`, `!setpingrole`
 Commands are **prefix-based messages** (default `!`, configurable in `COMMAND_PREFIX`) — instead of slash commands — so they do not mix with the slash commands of other bots on the `/` list. The table shows the **kRO map code** (navi, e.g. `gon_dun03`) instead of the Portuguese map name. Only messages starting with the prefix are processed; anything else is deleted automatically by the channel cleaning routine (requires the **Manage Messages** permission).
 
 Since there is no more command list on the `/` bar, discovery works like this:
-- As soon as a channel is defined, the bot pins a **📖 How to use** embed in it with the command list and examples — this notice stays above the table for good.
+- As soon as a channel is defined, the bot posts a persistent **📖 How to use** embed in it with the command list and examples — this notice stays above the table.
 - The bot shows the status "`!` to see the MVP Tracker commands" on the member list.
 - Inside the channel, `!track` (no arguments) or `!help` shows the command list.
 
