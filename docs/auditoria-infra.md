@@ -110,7 +110,7 @@ Boas práticas:
 
 - **Dependências:** `pip-audit -r src/requirements.lock --strict` roda no job `audit` da CI; Dependabot (pip, actions, docker) abre PRs semanais.
 - **Análise de código:** CodeQL está ativo (checks `Analyze` para Python/Actions e `CodeQL` observados na CI do PR #24 em 2026-11-25); a configuração é gerenciada pelo GitHub, sem workflow CodeQL versionado. Trate alerts encontrados como itens a triar.
-- **Reports de vulnerabilidade:** `SECURITY.md` descreve o reporte privado; confirme nas configurações se o private vulnerability reporting está ativo antes de contar com esse canal.
+- **Reports de vulnerabilidade:** private vulnerability reporting está ativo (confirmado pelo mantenedor em 2026-11-25); `SECURITY.md` descreve o canal privado.
 - **Imagem base:** `python:3.15.2-alpine` — atualizações via Dependabot (ecosystem docker).
 
 ## 5. Segurança do bot
