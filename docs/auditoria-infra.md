@@ -109,7 +109,7 @@ Boas práticas:
 | Perda do volume do banco | backup diário 04:00 UTC no OCI `laro-db-backups` (detalhes na seção 2); check `backup-laro` no healthchecks.io fica vermelho se não rodar | volume avariado sem cópia fora da VM |
 
 - **Dependências:** `pip-audit -r src/requirements.lock --strict` roda no job `audit` da CI; Dependabot (pip, actions, docker) abre PRs semanais.
-- **Análise de código:** confirme em Settings/Security → Code scanning se CodeQL está realmente ativo; não há workflow CodeQL versionado neste repositório. Trate os alerts encontrados como itens a triar.
+- **Análise de código:** CodeQL está ativo (checks `Analyze` para Python/Actions e `CodeQL` observados na CI do PR #24 em 2026-11-25); a configuração é gerenciada pelo GitHub, sem workflow CodeQL versionado. Trate alerts encontrados como itens a triar.
 - **Reports de vulnerabilidade:** `SECURITY.md` descreve o reporte privado; confirme nas configurações se o private vulnerability reporting está ativo antes de contar com esse canal.
 - **Imagem base:** `python:3.15.2-alpine` — atualizações via Dependabot (ecosystem docker).
 

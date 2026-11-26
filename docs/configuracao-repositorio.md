@@ -17,7 +17,7 @@ Em **Settings → Rules → Rulesets → `protege-main`** (ativas em repositóri
 | ↳ aprovações exigidas | 0 | manter (projeto de uma pessoa) | Quem abre o PR não aprova o próprio; exigir 1 com um só mantenedor trava o fluxo |
 | ↳ métodos de merge | Rebase only (outros desligados via repo settings) | manter | O método da casa; sem risco do merge errado |
 | ↳ Require status checks | ✅ `checks (3.13)/(3.14)/(3.15)`, `types`, `audit` | manter — **toda check nova da CI entra aqui antes do primeiro merge** | A CI é o portão do merge (lição da PR #13: o `types` pegou defeito na PR que o instalou) |
-| Require code scanning results | desligada | avaliar se ativar CodeQL | Bloqueia merge com alertas de alta severidade |
+| Require code scanning results | desligada | avaliar se exigir os resultados do CodeQL, que já está ativo | Faz os resultados do code scanning participarem do bloqueio de merge |
 | Require signed commits | desligada | avaliar; **testar em PR descartável antes** | Docs do GitHub: commits sem assinatura na branch da PR podem bloquear o merge, e o caso do Rebase and merge não é detalhado |
 | Bypass list | vazio | manter vazio | Emergência não deve ter atalho |
 
@@ -52,7 +52,7 @@ Depois adicione a mesma chave pública em **Settings → SSH and GPG keys** como
 | Item | Estado atual | Onde |
 |---|---|---|
 | Dependabot alerts + security updates | ✅ enabled | Settings → Code security |
-| Code scanning (CodeQL) | não confirmado | não há workflow CodeQL versionado; verificar Security → Code scanning | só documentar como ativo após conferir |
+| Code scanning (CodeQL) | ✅ ativo | checks `Analyze` (Python/Actions) e `CodeQL` observados no PR #24 em 2026-11-25; configuração gerenciada pelo GitHub | manter e triar alerts; workflow não é versionado neste repo |
 | Private vulnerability reporting | não confirmado | `SECURITY.md` descreve reporte privado, mas o recurso pode depender da configuração do GitHub | confirmar em Security → Private vulnerability reporting |
 | Workflow permissions | `contents: read` declarado no workflow | manter; cada workflow declara o que precisa |
 | PRs por workflows (GITHUB_TOKEN) | n/a | autorizar manualmente se um dia um workflow abrir PR |
