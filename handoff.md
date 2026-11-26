@@ -49,6 +49,8 @@ cd ~/laro_mvp_tracker && git pull && docker compose pull autoheal && docker comp
 
 Banco: `docker compose exec db psql -U postgres -d laro` (porta NÃO publicada fora do compose).
 
+Rede Oracle: as duas VMs deste ambiente usam a Security List padrão compartilhada. A regra TCP 443 é necessária para outro projeto; mudanças nela afetam ambas as VMs. Não remover sem avaliar esse impacto.
+
 ## Fluxo de contribuição (NÃO quebrar)
 
 - Tudo via PR; **merge único = Rebase and merge**; nunca push direto na `main`.

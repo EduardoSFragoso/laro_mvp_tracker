@@ -67,7 +67,7 @@ psql "$DATABASE_URL" -f sql/seed_mvp_latam.sql
 
 Defina um canal do seu servidor do Discord para ser usado exclusivamente no rastreamento de MVPs (recomendado um canal novo para isso). Use o comando **!setmvpchannel**. Nesse canal o bot mantém uma mensagem de instruções e uma tabela com os MVPs rastreados e os tempos restantes para o respawn.
 
-  - **ATENÇÃO**: ao usar esse comando, **TODAS** as mensagens do canal (se houver) serão apagadas de forma irreversível! Escolha o canal certo.
+  - **ATENÇÃO**: ao confirmar, o bot apaga as mensagens recentes do canal. Mensagens com 14 dias ou mais são preservadas por limite do Discord. Escolha o canal certo.
 
 Dentro de um canal de MVPs, há duas formas de rastrear:
 - digitando **!track NOME_DE_MVP** (sem horário = morreu agora) ou **!track NOME_DE_MVP HHMM** (requer permissão **Message Content**; aceita nome em português ou apelido em inglês — ex.: `!track amon ra 1234`, `!track atroce`, `!track brinaranea 1512`);
@@ -94,7 +94,7 @@ Comandos de configuração (`!timezone`, `!setmvpchannel`/`!unsetmvpchannel`, `!
 Os comandos são **mensagens com prefixo** (padrão `!`, configurável em `COMMAND_PREFIX`) — em vez de slash commands — para não aparecer misturados aos comandos de outros bots na lista `/`. A tabela exibe o **código kRO do mapa** (navi, ex.: `gon_dun03`) em vez do nome em português. Só mensagens que começam com o prefixo são processadas; as demais são apagadas automaticamente pela rotina de limpeza do canal (requer permissão **Manage Messages**).
 
 Como não há mais lista de comandos na barra `/`, a descoberta funciona assim:
-- Assim que um canal é definido, o bot fixa nele um embed **📖 Como usar** com a lista de comandos e exemplos — esse aviso fica permanentemente acima da tabela.
+- Assim que um canal é definido, o bot publica nele um embed persistente **📖 Como usar** com a lista de comandos e exemplos — esse aviso fica acima da tabela.
 - O bot aparece na lista de membros com o status "`!` para ver os comandos do MVP Tracker".
 - Dentro do canal, `!track` (sem argumentos) ou `!help` mostra a lista de comandos.
 

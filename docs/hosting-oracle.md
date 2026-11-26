@@ -15,7 +15,7 @@ Console Oracle Cloud → **Compute → Instances → Create Instance**.
 | OS | **Canonical Ubuntu 24.04** (ou 22.04) |
 | SSH key | Sua chave pública |
 
-Não habilite rede pública extra no **Security List**: só a regra padrão de **SSH (22/TCP)**. O bot só faz **chamadas de saída** (Discord + Postgres local + heartbeat) — nenhuma porta de entrada é necessária.
+O bot só faz **chamadas de saída** (Discord + Postgres local + heartbeat) — ele não precisa de portas de entrada. Antes de alterar a **Security List**, confira todas as VMs associadas: a lista padrão pode ser compartilhada por outros projetos. Neste ambiente, duas VMs usam a lista padrão e a regra **443/TCP** é necessária para o outro projeto; não a remova para atender apenas ao Laro. Mantenha SSH (22/TCP) conforme o acesso administrativo.
 
 ARM nota: a base do Dockerfile (`python:*-alpine`) é multi-arch (builda em aarch64),
 mas os wheels de `asyncpg`/`aiohttp` para Python 3.15 aarch64 ainda não foram

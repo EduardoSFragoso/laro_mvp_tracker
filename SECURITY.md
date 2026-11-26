@@ -2,9 +2,10 @@
 
 ## Reportando uma vulnerabilidade
 
-Este repositório tem **private vulnerability reporting** ativado: use a aba
-[Security](https://github.com/EduardoSFragoso/laro_mvp_tracker/security) →
-**Report a vulnerability** para abrir um canal privado com os mantenedores.
+Use a aba [Security](https://github.com/EduardoSFragoso/laro_mvp_tracker/security)
+→ **Report a vulnerability** para abrir um canal privado com os mantenedores.
+Esse recurso precisa estar ativo nas configurações do repositório. Se o botão
+não aparecer, contate o mantenedor por um canal privado conhecido.
 
 Por favor, **não abra uma issue pública** descrevendo falhas de segurança.
 
