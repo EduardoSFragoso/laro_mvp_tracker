@@ -53,7 +53,7 @@ Depois adicione a mesma chave pública em **Settings → SSH and GPG keys** como
 |---|---|---|
 | Dependabot alerts + security updates | ✅ enabled | Settings → Code security |
 | Code scanning (CodeQL) | ✅ ativo | checks `Analyze` (Python/Actions) e `CodeQL` observados no PR #24 em 2026-11-25; configuração gerenciada pelo GitHub | manter e triar alerts; workflow não é versionado neste repo |
-| Private vulnerability reporting | não confirmado | `SECURITY.md` descreve reporte privado, mas o recurso pode depender da configuração do GitHub | confirmar em Security → Private vulnerability reporting |
+| Private vulnerability reporting | ✅ enabled | confirmado pelo mantenedor em 2026-11-25; Settings → Code security | manter ativo para receber relatos em canal privado |
 | Workflow permissions | `contents: read` declarado no workflow | manter; cada workflow declara o que precisa |
 | PRs por workflows (GITHUB_TOKEN) | n/a | autorizar manualmente se um dia um workflow abrir PR |
 
